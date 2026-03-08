@@ -546,6 +546,49 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
   font-size:13px;font-weight:800}
 .font-swatch.active{border-color:var(--accent);transform:scale(1.14)}
 
+/* ═══ MYCOINS ════════════════════════════════════ */
+.coins-badge{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#f59e0b,#fbbf24);
+  color:#000;font-size:12px;font-weight:800;padding:4px 10px;border-radius:20px;
+  box-shadow:0 2px 8px rgba(245,158,11,.4)}
+.coins-badge svg{width:14px;height:14px}
+/* Tasks screen */
+#s-tasks .body{flex:1;overflow-y:auto;overscroll-behavior:contain}
+.task-card{margin:8px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:18px;
+  padding:16px;box-shadow:var(--s1);overflow:hidden;position:relative}
+.task-card.done{opacity:.65;border-color:var(--green)}
+.task-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
+.task-desc{font-size:12px;color:var(--t2);margin-bottom:10px}
+.task-prog{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:8px}
+.task-prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--accent));
+  border-radius:3px;transition:width .4s ease}
+.task-row{display:flex;align-items:center;justify-content:space-between}
+.task-reward{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:700;color:#d97706}
+.task-claim{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#000;border:none;
+  font-family:'Inter',sans-serif;font-size:12px;font-weight:800;padding:7px 14px;
+  border-radius:10px;cursor:pointer;transition:transform .15s;box-shadow:0 2px 8px rgba(245,158,11,.4)}
+.task-claim:active{transform:scale(.93)}
+.task-claimed{color:var(--green);font-size:12px;font-weight:700}
+/* Gifts */
+.gift-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;
+  padding:10px 6px;border-radius:16px;border:2px solid transparent;transition:all .2s}
+.gift-item:active{background:var(--bg2)}
+.gift-item.sel{border-color:var(--blue);background:var(--blue3)}
+.gift-anim{font-size:40px;animation:giftFloat 2s ease-in-out infinite alternate;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,.2))}
+@keyframes giftFloat{from{transform:translateY(0) scale(1)}to{transform:translateY(-6px) scale(1.06)}}
+.gift-name{font-size:12px;font-weight:700;color:var(--text)}
+.gift-price{font-size:11px;color:#d97706;font-weight:700}
+/* Profile gifts display */
+.gift-showcase{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px}
+.gift-bubble{background:var(--bg2);border-radius:16px;padding:8px 12px;display:flex;
+  align-items:center;gap:8px;border:1.5px solid var(--border);animation:giftPop .3s ease}
+@keyframes giftPop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+.gift-from{font-size:11px;color:var(--t2)}
+/* Coins animation */
+@keyframes coinFly{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-80px) scale(1.5);opacity:0}}
+.coin-fly{position:fixed;font-size:28px;pointer-events:none;z-index:9999;
+  animation:coinFly .7s ease forwards}
+
 /* ═══ TOAST ══════════════════════════════════════ */
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(14px);
   background:rgba(10,12,22,.88);color:#fff;padding:10px 20px;border-radius:22px;
@@ -695,6 +738,10 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 100px var(--bg) inset!important;
       <div class="sname" id="s-name-disp"></div>
       <div class="sun" id="s-un-disp"></div>
       <div class="sbio" id="s-bio-disp"></div>
+      <div class="coins-badge" id="s-coins-disp" style="margin-top:6px">
+        <svg viewBox="0 0 24 24" fill="#b45309" stroke="none"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" font-size="11" font-weight="900" fill="#fef3c7">M</text></svg>
+        <span>0 Mycoins</span>
+      </div>
     </div>
     <div class="ssec"><div class="ssec-title">Профиль</div><div class="scard">
       <div class="srow nt"><div class="sico2" style="background:#5b8dee"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="sbody"><div class="slabel">Логин</div><div class="sval" id="s-un-ro"></div></div></div>
@@ -725,6 +772,9 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 100px var(--bg) inset!important;
       <div class="srow" onclick="toggleNotifications()"><div class="sico2" style="background:#eab308"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div><div class="sbody"><div class="slabel">Уведомления</div><div class="sval" id="notif-label">Включены</div></div><button class="toggle on" id="notif-toggle" onclick="event.stopPropagation();toggleNotifications()"></button></div>
       <div class="srow" onclick="toggleSounds()"><div class="sico2" style="background:#06b6d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></div><div class="sbody"><div class="slabel">Звуки</div><div class="sval" id="sounds-label">Включены</div></div><button class="toggle on" id="sounds-toggle" onclick="event.stopPropagation();toggleSounds()"></button></div>
     </div></div>
+    <div class="ssec"><div class="ssec-title">Mycoins и подарки</div><div class="scard">
+      <div class="srow" onclick="openTasks()"><div class="sico2" style="background:linear-gradient(135deg,#f59e0b,#fbbf24)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="sbody"><div class="slabel" style="color:#d97706">Ежедневные задания</div><div class="sval">Зарабатывай Mycoins</div></div><div class="sarrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div></div>
+    </div></div>
     <div class="ssec"><div class="ssec-title">Аккаунт</div><div class="scard">
       <div class="srow" onclick="doLogout()"><div class="sico2" style="background:var(--red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div><div class="sbody"><div class="slabel" style="color:var(--red)">Выход</div><div class="sval" style="color:var(--red)">Выйти из аккаунта</div></div></div>
     </div></div>
@@ -743,7 +793,8 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 100px var(--bg) inset!important;
     </div>
     <div class="prof-actions" id="prof-actions"></div>
     <div class="prof-bio-sec" id="prof-bio-sec" style="display:none"><div class="prof-bio-title">О себе</div><div class="prof-bio-text" id="prof-bio"></div></div>
-    <div class="ssec" style="padding-top:8px"><div class="scard" id="prof-info-card"></div></div>
+    <div class="ssec" style="padding-top:4px"><div class="ssec-title" style="padding:12px 14px 4px">Подарки</div><div class="gift-showcase" id="prof-gifts-showcase"><div style="font-size:12px;color:var(--t2)">Загрузка…</div></div></div>
+    <div class="ssec" style="padding-top:4px"><div class="scard" id="prof-info-card"></div></div>
   </div>
 </div>
 
@@ -816,6 +867,49 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 100px var(--bg) inset!important;
 <div id="imgview" onclick="this.classList.remove('on')"><img id="imgview-img" src="" alt=""><button id="imgview-close" onclick="document.getElementById('imgview').classList.remove('on')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
 <div class="toast" id="toast"></div>
 
+<!-- TASKS SCREEN -->
+<div id="s-tasks" class="screen hidden">
+  <div class="hdr"><button class="hbtn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div class="htitle" style="display:flex;align-items:center;gap:8px">Задания
+      <div class="coins-badge" id="tasks-coins-disp">
+        <svg viewBox="0 0 24 24" fill="#b45309" width="14" height="14"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" font-size="11" font-weight="900" fill="#fef3c7">M</text></svg>
+        <span id="tasks-coins-val">0</span>
+      </div>
+    </div>
+  </div>
+  <div class="body">
+    <div style="padding:14px 14px 6px">
+      <div style="font-size:13px;color:var(--t2);line-height:1.6">Выполняй задания каждый день и получай Mycoins. Максимум <strong>70 Mycoins в день</strong>. Задания обновляются в полночь.</div>
+    </div>
+    <div id="tasks-list"></div>
+    <div style="height:30px"></div>
+  </div>
+</div>
+
+<!-- GIFTS SCREEN -->
+<div id="s-gifts" class="screen hidden">
+  <div class="hdr"><button class="hbtn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div class="htitle" id="gifts-title">Подарить подарок</div>
+  </div>
+  <div class="body" style="overflow-y:auto;padding:14px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+      <div class="coins-badge"><svg viewBox="0 0 24 24" fill="#b45309" width="14" height="14"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" font-size="11" font-weight="900" fill="#fef3c7">M</text></svg><span id="gift-my-coins">0 Mycoins</span></div>
+      <span style="font-size:12px;color:var(--t2)">у вас</span>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px">Выберите подарок:</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px" id="gift-grid"></div>
+    <div id="gift-selected-info" style="display:none;background:var(--bg2);border-radius:16px;padding:14px;margin-bottom:14px">
+      <div style="font-size:13px;color:var(--t2);margin-bottom:4px">Выбран подарок:</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span id="gift-sel-ico" style="font-size:32px"></span>
+        <div><div id="gift-sel-name" style="font-weight:700;font-size:15px"></div><div id="gift-sel-price" style="color:#d97706;font-weight:700;font-size:13px"></div></div>
+      </div>
+    </div>
+    <button class="btn pr" style="width:100%" id="gift-send-btn" onclick="sendGift()" disabled style="opacity:.4">Отправить подарок</button>
+    <div style="height:30px"></div>
+  </div>
+</div>
+
 <!-- VIDEO FULLSCREEN VIEWER -->
 <div id="vidview">
   <a id="vidview-dl" title="Скачать"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></a>
@@ -858,9 +952,10 @@ const ALL_EMOJIS=['😁','🥹','😅','😏','🥲','🤣','😛','😄','😮'
 
 // ── TICK SVGs ─────────────────────────────────────────────────────
 // Single grey tick = message sent (not yet read)
-const TICK1 = `<svg width="14" height="10" viewBox="0 0 14 10" fill="none" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M1 5L5 9L13 1" stroke="#9aabb8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-// Double blue ticks = read by at least one other member (EXACTLY 2 checks, both blue)
-const TICK2 = `<svg width="19" height="10" viewBox="0 0 19 10" fill="none" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M1 5L5 9L13 1" stroke="#2AABEE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 9L14 1" stroke="#2AABEE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+// TICK1: single thin grey checkmark
+const TICK1 = '<svg width="13" height="9" viewBox="0 0 13 9" fill="none" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-left:1px"><path d="M1.5 4.5L4.8 7.8L11.5 1.2" stroke="#9aabb8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+// TICK2: two separate blue checkmarks (offset so they look distinct)
+const TICK2 = '<svg width="21" height="9" viewBox="0 0 21 9" fill="none" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-left:1px"><path d="M1.5 4.5L4.8 7.8L11.5 1.2" stroke="#2AABEE" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 4.5L12.8 7.8L19.5 1.2" stroke="#2AABEE" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 // ── STATE ──────────────────────────────────────────────────────────
 let ME=null,ALL_USERS={},ALL_CHATS={},MESSAGES={};
@@ -1041,7 +1136,7 @@ function enterApp(){
   document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
   document.getElementById('s-list').classList.remove('hidden');
   try{const rs=localStorage.getItem('myx_read_'+ME);if(rs)readState=JSON.parse(rs);}catch{}
-  subscribeGlobal();heartbeat();initEmojiPanel();buildWpGrid();applySettings();
+  subscribeGlobal();heartbeat();initEmojiPanel();buildWpGrid();applySettings();loadCoins();updateCoinsDisplay();
   // Apply accent/font from user profile once users load
   setTimeout(async()=>{
     const snap=await get(ref(db,'users/'+ME));if(!snap.exists())return;
@@ -1056,32 +1151,49 @@ document.addEventListener('visibilitychange',()=>{if(!ME)return;if(document.hidd
 function saveReadState(){try{localStorage.setItem('myx_read_'+ME,JSON.stringify(readState));}catch{}}
 
 // ── SUBSCRIPTIONS ──────────────────────────────────────────────────
+let perChatUnsubs={};
 function subscribeGlobal(){
   if(usersUnsub)try{usersUnsub();}catch{}
   usersUnsub=onValue(ref(db,'users'),snap=>{ALL_USERS=snap.val()||{};renderChatList();if(curChatId)updateChatHeader();});
   if(chatUnsub)try{chatUnsub();}catch{}
-  chatUnsub=onValue(ref(db,'chats'),snap=>{ALL_CHATS=snap.val()||{};renderChatList();if(curChatId)updateChatHeader();});
+  chatUnsub=onValue(ref(db,'chats'),snap=>{
+    const prev=Object.keys(ALL_CHATS);
+    ALL_CHATS=snap.val()||{};
+    renderChatList();if(curChatId)updateChatHeader();
+    // Subscribe to messages of chats not currently open for unread counts
+    Object.keys(ALL_CHATS).forEach(cid=>{
+      if(!perChatUnsubs[cid]&&ALL_CHATS[cid]?.members?.[ME]){
+        perChatUnsubs[cid]=onValue(ref(db,'messages/'+cid),snap2=>{
+          recalcUnread(cid,snap2.val()||{});
+          renderChatList();
+        });
+      }
+    });
+  });
 }
 function subscribeMessages(chatId){
   if(msgsUnsub){try{msgsUnsub();}catch{}msgsUnsub=null;}
   MESSAGES={};// reset messages for new chat to avoid stale data
-  let isFirstLoad=true;// skip sound on initial load of existing messages
+  let isFirstLoad=true;
   let prevIds=new Set();
   msgsUnsub=onValue(ref(db,'messages/'+chatId),snap=>{
     const nm=snap.val()||{};const ni=new Set(Object.keys(nm));
     if(!isFirstLoad){
-      // only trigger sounds/marks for truly NEW messages after subscription started
       ni.forEach(id=>{
         if(!prevIds.has(id)&&nm[id]?.from!==ME&&chatId===curChatId){
           playReceiveSound();
-          // mark as read immediately since we're viewing this chat
           update(ref(db,`messages/${chatId}/${id}/readBy`),{[ME]:true}).catch(()=>{});
         }
       });
     }
     isFirstLoad=false;
-    prevIds=ni;MESSAGES=nm;
-    if(chatId===curChatId)renderMessages();
+    prevIds=ni;
+    // Only update MESSAGES if this is the active chat
+    recalcUnread(chatId, nm);
+    if(chatId===curChatId){
+      MESSAGES=nm;
+      renderMessages();
+    }
     renderChatList();
   });
   onValue(ref(db,'chats/'+chatId+'/typing'),snap=>{
@@ -1100,10 +1212,20 @@ function subscribeMessages(chatId){
 }
 
 // ── UNREAD ─────────────────────────────────────────────────────────
+// Per-chat unread counts (fetched from Firebase and cached)
+const UNREAD_CACHE={};
 function getUnread(chatId){
-  const c=ALL_CHATS[chatId];if(!c)return 0;
-  if(c.lastMsgFrom===ME)return 0;
-  return(c.lastMsgTime||0)>(readState[chatId]||0)?1:0;
+  if(curChatId===chatId)return 0;
+  return UNREAD_CACHE[chatId]||0;
+}
+// Update unread cache when messages subscription fires
+function recalcUnread(chatId, msgsSnap){
+  const msgs=msgsSnap||{};
+  let count=0;
+  Object.values(msgs).forEach(m=>{
+    if(m.from!==ME&&!m.deleted&&!m.system&&(!m.readBy||!m.readBy[ME]))count++;
+  });
+  UNREAD_CACHE[chatId]=count;
 }
 
 // ── CHAT LIST ──────────────────────────────────────────────────────
@@ -1155,7 +1277,13 @@ window.openChat=function(chatId){
     const inp=document.getElementById('msg-inp');
     if(inp){inp.value=DRAFTS[chatId]||'';autoResize(inp);}
   },80);
-  showScreen('s-chat');setTimeout(scrollMsgs,120);
+  showScreen('s-chat');
+  setTimeout(()=>{
+    // Scroll to first unread message, or bottom if none
+    const firstUnread=document.querySelector('.mw[data-unread="1"]');
+    if(firstUnread)firstUnread.scrollIntoView({block:'center'});
+    else scrollMsgs();
+  },160);
 };
 async function markChatRead(chatId){
   try{
@@ -1207,12 +1335,24 @@ function renderMessages(){
     let mediaHtml='';
     if(msg.image&&!isDel){mediaHtml=`<div class="mimg-wrap"><img src="${msg.image}" alt="фото" loading="lazy" onclick="viewImg('${msg.image}');event.stopPropagation()"></div>`;}
     // Media: video — stored as base64 data URL
-    if(msg.video&&!isDel){
+    if((msg.video||msg.videoRef)&&!isDel){
       const vid_id='vid_'+msg.id;
-      mediaHtml=`<div class="mvid-wrap" onclick="event.stopPropagation()">
-        <video id="${vid_id}" src="${msg.video}" controls preload="metadata" playsinline style="width:100%;max-height:300px;display:block;border-radius:13px"></video>
-        <button onclick="openVidView('${msg.video}');event.stopPropagation()" style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.55);border:none;border-radius:8px;padding:5px 8px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;backdrop-filter:blur(3px);z-index:2">⛶ Полный экран</button>
-      </div>`;}
+      mediaHtml=`<div class="mvid-wrap" onclick="event.stopPropagation()" id="mvw_${msg.id}">
+        <video id="${vid_id}" data-msgid="${msg.id}" preload="metadata" playsinline style="width:100%;max-height:300px;display:block;border-radius:13px" controls onplay="hideFsBtn('${msg.id}')" onpause="showFsBtn('${msg.id}')" onloadedmetadata="this.dataset.loaded=1"></video>
+        <button id="fsbtn_${msg.id}" onclick="openVidView('${msg.id}');event.stopPropagation()" style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);border:none;border-radius:8px;padding:5px 9px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;backdrop-filter:blur(4px);z-index:2;display:flex;align-items:center;gap:4px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>Полный экран
+        </button>
+        <button onclick="downloadVideo('${msg.id}');event.stopPropagation()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.5);border:none;border-radius:8px;padding:5px 8px;color:#fff;font-size:11px;cursor:pointer;backdrop-filter:blur(3px);z-index:2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+      </div>`;
+      // Load video src after render (handles both direct and IDB refs)
+      setTimeout(async()=>{
+        const v=document.getElementById(vid_id);if(!v)return;
+        const src=await resolveMediaSrc(msg,'video');
+        if(src)v.src=src;
+      },50);
+    }
     // Music
     if(msg.audio&&!isDel){
       const aud_id='aud_'+msg.id;
@@ -1239,12 +1379,19 @@ function renderMessages(){
             <div class="mmusic-filled" id="progfill_${msg.id}"></div>
           </div>
           <div class="mmusic-time" id="audtime_${msg.id}">0:00</div>
-          <a class="mmusic-dl" href="${msg.audio}" download="${esc(fname)}" title="Скачать">
+          <button class="mmusic-dl" onclick="downloadAudio('${msg.id}');event.stopPropagation()" title="Скачать">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          </a>
+          </button>
         </div>
-        <audio id="${aud_id}" src="${msg.audio}" preload="metadata" style="display:none"></audio>
+        <audio id="${aud_id}" preload="metadata" style="display:none"></audio>
       </div>`;}
+    // Async load media from IDB if needed (after render)
+    if((msg.video||msg.videoRef)&&!isDel){
+      setTimeout(async()=>{const v=document.getElementById('vid_'+msg.id);if(v&&!v.src){const s=await resolveMediaSrc(msg,'video');if(s)v.src=s;}},60);
+    }
+    if((msg.audio||msg.audioRef)&&!isDel){
+      setTimeout(async()=>{const a=document.getElementById('aud_'+msg.id);if(a&&!a.src){const s=await resolveMediaSrc(msg,'audio');if(s)a.src=s;}},60);
+    }
     // Reactions
     let rxnHtml='';
     if(msg.reactions&&!isDel){const rm={};Object.entries(msg.reactions).forEach(([uid,em])=>{if(!rm[em])rm[em]={c:0,mine:false};rm[em].c++;if(uid===ME)rm[em].mine=true;});rxnHtml='<div class="reactions">'+Object.entries(rm).map(([em,{c,mine}])=>`<div class="rxn${mine?' mine':''}" onclick="toggleRxn('${msg.id}','${em}');event.stopPropagation()">${em}<span>${c}</span></div>`).join('')+'</div>';}
@@ -1263,7 +1410,8 @@ function renderMessages(){
     if(isGrp&&!isOut){
       html+=`<div class="mw in grp" data-id="${msg.id}" onclick="handleMsgTap(event,'${msg.id}',${isOut})">${avHtml}<div class="mbody">${!isDel?`<div class="msender" style="color:${sender?.color||'var(--blue)'}">${esc(sender?.name||msg.from)}</div>`:''}<div class="mb">${fwdHtml}${rqHtml}${mediaHtml}${bubbleTxt?`<span class="mtext" style="${txtStyle}">${bubbleTxt}</span>`:''}</div>${rxnHtml}<div class="mmeta">${editHtml}<span class="mtime">${t}</span>${tickHtml}</div></div></div>`;
     }else{
-      html+=`<div class="mw ${isOut?'out':'in'}" data-id="${msg.id}" onclick="handleMsgTap(event,'${msg.id}',${isOut})"><div class="mb">${fwdHtml}${rqHtml}${mediaHtml}${bubbleTxt?`<span class="mtext" style="${txtStyle}">${bubbleTxt}</span>`:''}</div>${rxnHtml}<div class="mmeta">${editHtml}<span class="mtime">${t}</span>${tickHtml}</div></div>`;
+      const isUnread=!isOut&&(!msg.readBy||!msg.readBy[ME]);
+    html+=`<div class="mw ${isOut?'out':'in'}" data-id="${msg.id}" data-unread="${isUnread?'1':'0'}" onclick="handleMsgTap(event,'${msg.id}',${isOut})"><div class="mb">${fwdHtml}${rqHtml}${mediaHtml}${bubbleTxt?`<span class="mtext" style="${txtStyle}">${bubbleTxt}</span>`:''}</div>${rxnHtml}<div class="mmeta">${editHtml}<span class="mtime">${t}</span>${tickHtml}</div></div>`;
     }
   });
   body.innerHTML=html;
@@ -1305,7 +1453,7 @@ function showCtxPanel(msgId,isOut){
   document.body.appendChild(panel);document.getElementById('ctx-ov').classList.add('on');ctxActive=panel;
 }
 window.dismissCtx=function(){if(ctxActive){try{ctxActive.remove();}catch{}ctxActive=null;}document.getElementById('ctx-ov').classList.remove('on');};
-window.toggleRxn=async function(msgId,emoji){if(!curChatId)return;playClickSound();const cur=MESSAGES[msgId]?.reactions?.[ME];if(cur===emoji)await remove(ref(db,`messages/${curChatId}/${msgId}/reactions/${ME}`));else await set(ref(db,`messages/${curChatId}/${msgId}/reactions/${ME}`),emoji);};
+window.toggleRxn=async function(msgId,emoji){if(!curChatId)return;playClickSound();const cur=MESSAGES[msgId]?.reactions?.[ME];if(cur===emoji)await remove(ref(db,`messages/${curChatId}/${msgId}/reactions/${ME}`));else{await set(ref(db,`messages/${curChatId}/${msgId}/reactions/${ME}`),emoji);incrementTask('reacts');}};
 window.copyMsg=function(msgId){const msg=MESSAGES[msgId];if(!msg)return;navigator.clipboard?.writeText(msg.text||'').then(()=>{showToast('Скопировано ✓');}).catch(()=>showToast('Ошибка'));};
 
 // ── CHAT MENU ──────────────────────────────────────────────────────
@@ -1348,8 +1496,14 @@ window.sendMessage=async function(){
   if(editMsgId){await update(ref(db,`messages/${curChatId}/${editMsgId}`),{text,edited:true,editedAt:Date.now()});await update(ref(db,'chats/'+curChatId),{lastMsg:text,lastMsgFrom:ME,lastMsgTime:Date.now()});cancelEdit();return;}
   const nr=push(ref(db,'messages/'+curChatId));const msgId=nr.key;
   await set(nr,{id:msgId,from:ME,text,ts:Date.now(),replyTo:replyTo?replyTo.msgId:null,edited:false,deleted:false});
+  // Increment unread for all members except sender
+  const chatMembers=ALL_CHATS[curChatId]?.members||{};
+  const unreadUpdates={};
+  Object.keys(chatMembers).forEach(m=>{if(m!==ME)unreadUpdates[`chats/${curChatId}/unread/${m}`]={inc:true,ts:Date.now()};});
   await update(ref(db,'chats/'+curChatId),{lastMsg:text,lastMsgFrom:ME,lastMsgTime:Date.now()});
   cancelReply();scrollMsgs();playSendSound();
+  incrementTask('msgs');
+  if(replyTo)incrementTask('replies');// counted before cancel
 };
 
 // ── ATTACH MENU ────────────────────────────────────────────────────
@@ -1389,37 +1543,59 @@ window.sendImageFile=async function(input){
       await set(nr,{id:nr.key,from:ME,text:'',image:dataUrl,ts:Date.now(),replyTo:replyTo?replyTo.msgId:null,edited:false,deleted:false});
       await update(ref(db,'chats/'+curChatId),{lastMsg:'📷 Фото',lastMsgFrom:ME,lastMsgTime:Date.now()});
       cancelReply();scrollMsgs();playSendSound();
+      incrementTask('photos');
     };img.src=e.target.result;
   };reader.readAsDataURL(file);
 };
 
 // ── SEND VIDEO ─────────────────────────────────────────────────────
+// Helper: FileReader as promise
+function readFileAsDataURL(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(file);});}
+
+// Store large media in IndexedDB to avoid Firebase size limits
+async function saveToIDB(key,data){return new Promise((res,rej)=>{const req=indexedDB.open('myx_media',1);req.onupgradeneeded=e=>e.target.result.createObjectStore('files');req.onsuccess=e=>{const tx=e.target.result.transaction('files','readwrite');const store=tx.objectStore('files');const r=store.put(data,key);r.onsuccess=()=>res(key);r.onerror=rej;};req.onerror=rej;});}
+async function getFromIDB(key){return new Promise((res,rej)=>{const req=indexedDB.open('myx_media',1);req.onupgradeneeded=e=>e.target.result.createObjectStore('files');req.onsuccess=e=>{const tx=e.target.result.transaction('files','readonly');const store=tx.objectStore('files');const r=store.get(key);r.onsuccess=()=>res(r.result||null);r.onerror=rej;};req.onerror=rej;});}
+
 window.sendVideoFile=async function(input){
   const file=input.files[0];if(!file||!curChatId)return;input.value='';
   const MB=1024*1024;
-  if(file.size>50*MB){showToast('Видео слишком большое (макс. 50 МБ)');return;}
-  // Show "sending" status to self and others via a temp typing-like flag
+  if(file.size>100*MB){showToast('Видео слишком большое (макс. 100 МБ)');return;}
   const chat=ALL_CHATS[curChatId];
   const isGrp=chat?.type==='group';
-  const senderName=ALL_USERS[ME]?.name?.split(' ')[0]||ME;
-  const statusMsg=isGrp?`${senderName} отправляет видео…`:'Видео отправляется…';
-  update(ref(db,`chats/${curChatId}/typing/${ME}`),{t:true,ts:Date.now(),custom:statusMsg});
+  const senderName=ALL_USERS[ME]?.name||ME;
+  // Animated dots status
+  let dotStep=0;const dotInterval=setInterval(()=>{
+    const dots=['.','..','...'][dotStep%3];dotStep++;
+    const msg=isGrp?`${senderName} отправляет видео${dots}`:`Отправляет видео${dots}`;
+    update(ref(db,`chats/${curChatId}/typing/${ME}`),{t:true,ts:Date.now(),custom:msg});
+  },600);
   showToast('Видео отправляется…');
   try{
     const dataUrl=await readFileAsDataURL(file);
+    // Store in IDB if >5MB, reference by key in Firebase
+    let videoRef=null;let videoData=null;
+    const idbKey='vid_'+ME+'_'+Date.now();
+    if(file.size>5*MB){
+      await saveToIDB(idbKey,dataUrl);
+      videoRef=idbKey;// store IDB key in Firebase message
+    }else{
+      videoData=dataUrl;
+    }
+    clearInterval(dotInterval);
+    update(ref(db,`chats/${curChatId}/typing/${ME}`),{t:false,ts:0,custom:''});
     const nr=push(ref(db,'messages/'+curChatId));
-    await set(nr,{id:nr.key,from:ME,text:'',video:dataUrl,ts:Date.now(),replyTo:replyTo?replyTo.msgId:null,edited:false,deleted:false});
+    const msgData={id:nr.key,from:ME,text:'',ts:Date.now(),replyTo:replyTo?replyTo.msgId:null,edited:false,deleted:false,videoSize:file.size,videoName:file.name};
+    if(videoData)msgData.video=videoData;
+    if(videoRef)msgData.videoRef=videoRef;
+    await set(nr,msgData);
     await update(ref(db,'chats/'+curChatId),{lastMsg:'🎥 Видео',lastMsgFrom:ME,lastMsgTime:Date.now()});
-    update(ref(db,`chats/${curChatId}/typing/${ME}`),{t:false,ts:0,custom:''});
-    cancelReply();scrollMsgs();playSendSound();showToast('Видео отправлено ✓');
+    cancelReply();scrollMsgs();playSendSound();showToast('Видео отправлено ✓');incrementTask('videos');
   }catch(e){
+    clearInterval(dotInterval);
     update(ref(db,`chats/${curChatId}/typing/${ME}`),{t:false,ts:0,custom:''});
-    showToast('Ошибка: файл слишком большой для базы данных. Попробуйте меньше 8 МБ.');
-    console.error('video send error',e);
+    showToast('Ошибка отправки: '+e.message);console.error(e);
   }
 };
-// Helper: FileReader as promise
-function readFileAsDataURL(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(file);});}
 
 window.onTypingEvt=function(){if(!curChatId||!ME)return;update(ref(db,`chats/${curChatId}/typing/${ME}`),{t:true,ts:Date.now()});clearTimeout(typingTimer);typingTimer=setTimeout(()=>{if(curChatId&&ME)update(ref(db,`chats/${curChatId}/typing/${ME}`),{t:false,ts:0});},3000);};
 
@@ -1430,13 +1606,30 @@ window.openUserProfile=function(un){
   if(u.avatar)avEl.innerHTML=`<img src="${u.avatar}" alt="">`;
   else avEl.innerHTML=`<div style="background:${u.color||'#2196F3'};width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff">${ini(u.name)}</div>`;
   const isDev2=un==='dm1try';
-  document.getElementById('prof-name').innerHTML=isDev2?`<span style="background:linear-gradient(135deg,#b8860b,#ffd700,#b8860b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${esc(u.name)}</span>`:esc(u.name);
-  document.getElementById('prof-un').innerHTML='@'+u.username+(isDev2?` <span style="background:linear-gradient(135deg,#b8860b,#ffd700);color:#000;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:4px">👑 Разработчик мессенджера</span>`:'');
+  if(isDev2){
+    document.getElementById('prof-name').innerHTML=`<span style="background:linear-gradient(90deg,#b8860b,#ffd700,#b8860b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:800">${esc(u.name)}</span>`;
+    document.getElementById('prof-un').innerHTML=`<span style="color:rgba(255,255,255,.72)">@${u.username}</span>`;
+    // Insert dev badge below name
+    const devBadge=document.createElement('div');
+    devBadge.style.cssText='display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#b8860b,#ffd700,#b8860b);color:#000;font-size:11px;font-weight:800;padding:4px 10px;border-radius:12px;margin-top:5px;box-shadow:0 2px 10px rgba(255,215,0,.5)';
+    devBadge.innerHTML='👑 Разработчик мессенджера';
+    document.getElementById('prof-status').parentNode.insertBefore(devBadge,document.getElementById('prof-status').nextSibling);
+  }else{
+    document.getElementById('prof-name').textContent=u.name;
+    document.getElementById('prof-un').textContent='@'+u.username;
+  }
   const st=document.getElementById('prof-status');
   if(u.online){st.textContent='● В сети';st.className='prof-status on';}else{st.textContent='Был(а) '+fmtLastSeen(u.lastSeen);st.className='prof-status off';}
   const bioSec=document.getElementById('prof-bio-sec');
   if(u.bio){document.getElementById('prof-bio').textContent=u.bio;bioSec.style.display='block';}else bioSec.style.display='none';
-  document.getElementById('prof-actions').innerHTML=un!==ME?`<button class="btn pr" style="flex:1" onclick="startDMWith('${un}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Написать</button>`:'';
+  const profActionsHtml=un!==ME?`<button class="btn pr" style="flex:1" onclick="startDMWith('${un}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Написать</button><button class="btn gh" style="flex:1" onclick="openGifts('${un}')">🎁 Подарить</button>`:'<button class="btn gh" style="flex:1;pointer-events:none" onclick="openTasks()">🪙 Мои задания</button>';
+  document.getElementById('prof-actions').innerHTML=profActionsHtml;
+  // Load and show gifts
+  loadUserGifts(un).then(gifts=>{
+    const showcase=document.getElementById('prof-gifts-showcase');if(!showcase)return;
+    if(!gifts.length){showcase.innerHTML='<div style="font-size:12px;color:var(--t2);padding:8px 16px">Нет подарков</div>';return;}
+    showcase.innerHTML=gifts.slice(0,8).map(g=>`<div class="gift-bubble"><span style="font-size:24px;animation:giftFloat 2s ease-in-out infinite alternate">${g.emoji}</span><div><div style="font-size:12px;font-weight:700">${g.name}</div><div class="gift-from">от ${esc(g.fromName||g.from)} · ${g.price} Mycoins</div></div></div>`).join('');
+  });
   document.getElementById('prof-info-card').innerHTML=`<div class="srow nt"><div class="sico2" style="background:#5b8dee"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="sbody"><div class="slabel">Логин</div><div class="sval">@${u.username}</div></div></div>${u.bio?`<div class="srow nt"><div class="sico2" style="background:#8b5cf6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div class="sbody"><div class="slabel">О себе</div><div class="sval">${esc(u.bio)}</div></div></div>`:''}`;
   showScreen('s-profile');
 };
@@ -1538,35 +1731,93 @@ window.insertEmoji=function(em){const inp=document.getElementById('msg-inp');con
 
 // ── IMAGE VIEWER ───────────────────────────────────────────────────
 window.viewImg=function(url){document.getElementById('imgview-img').src=url;document.getElementById('imgview').classList.add('on');};
+// ── DOWNLOAD HELPERS ─────────────────────────────────────────────────
+async function resolveMediaSrc(msg,type){
+  // type: 'audio','video'
+  let src=msg[type]||null;
+  const refKey=msg[type+'Ref'];
+  if(!src&&refKey)src=await getFromIDB(refKey);
+  return src;
+}
+window.downloadAudio=async function(msgId){
+  const msg=MESSAGES[msgId];if(!msg)return;
+  showToast('Подготовка к скачиванию…');
+  const src=await resolveMediaSrc(msg,'audio');
+  if(!src){showToast('Аудио недоступно');return;}
+  const a=document.createElement('a');a.href=src;a.download=(msg.audioName||'audio')+'.mp3';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+};
+window.downloadVideo=async function(msgId){
+  const msg=MESSAGES[msgId];if(!msg)return;
+  showToast('Подготовка видео…');
+  const src=await resolveMediaSrc(msg,'video');
+  if(!src){showToast('Видео недоступно');return;}
+  const a=document.createElement('a');a.href=src;a.download=(msg.videoName||'video')+'.mp4';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+};
 
 // ── FORWARD MESSAGE ─────────────────────────────────────────────────
 let fwdMsgId=null;
+let fwdTargetChatId=null;
 window.openForwardPicker=function(msgId){
   fwdMsgId=msgId;dismissCtx();
-  // Build list of all chats to forward to
+  fwdTargetChatId=null;
   const chats=Object.values(ALL_CHATS).filter(c=>c.members&&c.members[ME]);
   chats.sort((a,b)=>(b.lastMsgTime||0)-(a.lastMsgTime||0));
-  // Create modal-like panel
-  const panel=document.createElement('div');panel.className='ctx-panel';panel.style.maxHeight='70dvh';panel.style.overflowY='auto';
-  panel.innerHTML=`<div class="ctx-handle"></div><div style="padding:8px 16px 12px;font-size:15px;font-weight:700;color:var(--text)">Переслать в…</div>`+
-    chats.map(c=>{const nm=chatName(c);return`<div class="cxi" onclick="forwardMsg('${c.id}')"><div class="av xs" style="background:${c.color||'#2196F3'};flex-shrink:0">${ini(nm)}</div>${esc(nm)}</div>`;}).join('');
-  document.body.appendChild(panel);document.getElementById('ctx-ov').classList.add('on');ctxActive=panel;
+  // Use existing modal system
+  const mo=document.getElementById('m-new');// reuse overlay structure
+  // Create dedicated forward modal
+  let fm=document.getElementById('fwd-modal');
+  if(!fm){
+    fm=document.createElement('div');fm.id='fwd-modal';fm.className='mover';
+    fm.innerHTML=`<div class="msheet" style="max-height:75dvh">
+      <div class="mhandle"></div>
+      <div class="mtitle">Переслать в…</div>
+      <div style="font-size:12px;color:var(--t2);margin:-8px 0 12px" id="fwd-dest-label">Выберите чат</div>
+      <div class="mresults" id="fwd-list" style="flex:1;overflow-y:auto"></div>
+      <div class="mfooter"><button class="btn pr" style="width:100%;opacity:.4;pointer-events:none" id="fwd-confirm-btn" onclick="confirmForward()">Переслать</button></div>
+    </div>`;
+    fm.onclick=e=>{if(e.target===fm)fm.classList.remove('on');};
+    document.body.appendChild(fm);
+  }
+  document.getElementById('fwd-list').innerHTML=chats.map(c=>{
+    const nm=chatName(c);
+    let avHtml='';
+    if(c.type==='group'){avHtml=c.avatar?`<div class="av sm"><img src="${c.avatar}"></div>`:`<div class="av sm" style="background:${c.color||'#2196F3'}">${ini(nm)}</div>`;}
+    else{const o=Object.keys(c.members||{}).find(m=>m!==ME);const u=ALL_USERS[o];avHtml=u?avUser(u,'sm'):`<div class="av sm" style="background:#999">${ini('?')}</div>`;}
+    return`<div class="urow" id="fwdrow_${c.id}" onclick="selectFwdChat('${c.id}','${esc(nm)}')">${avHtml}<div class="urinfo"><div class="urname">${esc(nm)}</div></div></div>`;
+  }).join('');
+  fm.classList.add('on');playPopSound();
 };
-window.forwardMsg=async function(toChatId){
-  dismissCtx();if(!fwdMsgId)return;
-  const orig=MESSAGES[fwdMsgId];if(!orig)return;
-  const nr=push(ref(db,'messages/'+toChatId));
+window.selectFwdChat=function(cid,nm){
+  fwdTargetChatId=cid;
+  document.querySelectorAll('[id^=fwdrow_]').forEach(r=>r.style.background='');
+  const row=document.getElementById('fwdrow_'+cid);
+  if(row)row.style.background='var(--blue3)';
+  const lbl=document.getElementById('fwd-dest-label');
+  if(lbl)lbl.innerHTML=`Кому: <strong>${nm}</strong>`;
+  const btn=document.getElementById('fwd-confirm-btn');
+  if(btn){btn.style.opacity='1';btn.style.pointerEvents='auto';}
+};
+window.confirmForward=async function(){
+  const fm=document.getElementById('fwd-modal');if(fm)fm.classList.remove('on');
+  if(!fwdMsgId||!fwdTargetChatId)return;
+  const orig=MESSAGES[fwdMsgId];if(!orig){showToast('Сообщение не найдено');return;}
+  const nr=push(ref(db,'messages/'+fwdTargetChatId));
   const fwd={id:nr.key,from:ME,ts:Date.now(),edited:false,deleted:false,
     forwardFrom:orig.from,forwardName:ALL_USERS[orig.from]?.name||orig.from};
   if(orig.text)fwd.text=orig.text;
   if(orig.image)fwd.image=orig.image;
   if(orig.video)fwd.video=orig.video;
+  if(orig.videoRef)fwd.videoRef=orig.videoRef;
   if(orig.audio){fwd.audio=orig.audio;fwd.audioName=orig.audioName;fwd.audioSize=orig.audioSize;}
+  if(orig.audioRef)fwd.audioRef=orig.audioRef;
   await set(nr,fwd);
-  const preview=orig.text||'📎 Медиа';
-  await update(ref(db,'chats/'+toChatId),{lastMsg:'↪️ '+preview.slice(0,40),lastMsgFrom:ME,lastMsgTime:Date.now()});
-  showToast('Переслано ✓');fwdMsgId=null;
+  const preview=orig.text?orig.text.slice(0,40):'📎 Медиа';
+  await update(ref(db,'chats/'+fwdTargetChatId),{lastMsg:'↪️ '+preview,lastMsgFrom:ME,lastMsgTime:Date.now()});
+  showToast('Переслано ✓');fwdMsgId=null;fwdTargetChatId=null;incrementTask('fwd');
 };
+window.forwardMsg=window.confirmForward;// alias
 
 // ── DELETE DM ────────────────────────────────────────────────────────
 window.confirmDeleteDM=function(){
@@ -1593,17 +1844,24 @@ window.deleteDMConfirmed=async function(){
 };
 
 // ── VIDEO FULLSCREEN ────────────────────────────────────────────────
-window.openVidView=function(url,inChatVidEl){
-  // Pause all in-chat videos first
-  document.querySelectorAll('.mvid-wrap video').forEach(v=>{ try{v.pause();}catch{} });
-  const v=document.getElementById('vidview-vid');v.src=url;
-  const dl=document.getElementById('vidview-dl');dl.href=url;dl.download='video.mp4';
-  document.getElementById('vidview').classList.add('on');
-  v.play().catch(()=>{});
-};
+// openVidView defined below
+
 window.closeVidView=function(){
   const v=document.getElementById('vidview-vid');v.pause();v.src='';
   document.getElementById('vidview').classList.remove('on');
+};
+window.hideFsBtn=function(msgId){const b=document.getElementById('fsbtn_'+msgId);if(b)b.style.display='none';};
+window.showFsBtn=function(msgId){const b=document.getElementById('fsbtn_'+msgId);if(b)b.style.display='flex';};
+window.openVidView=async function(msgId){
+  document.querySelectorAll('.mvid-wrap video').forEach(v=>{try{v.pause();}catch{}});
+  const msg=MESSAGES[msgId];if(!msg)return;
+  const src=await resolveMediaSrc(msg,'video');
+  if(!src){showToast('Видео недоступно');return;}
+  const v=document.getElementById('vidview-vid');v.src=src;
+  const dl=document.getElementById('vidview-dl');
+  dl.href='#';dl.onclick=e=>{e.preventDefault();downloadVideo(msgId);};
+  document.getElementById('vidview').classList.add('on');
+  v.play().catch(()=>{});
 };
 
 // ── AUDIO PLAYER ────────────────────────────────────────────────────
@@ -1650,18 +1908,27 @@ window.seekAudio=function(e,msgId){
 window.sendMusicFile=async function(input){
   const file=input.files[0];if(!file||!curChatId)return;input.value='';
   const MB=1024*1024;
-  if(file.size>20*MB){showToast('Аудио слишком большое (макс. 20 МБ)');return;}
   showToast('Загрузка музыки…');
   try{
     const dataUrl=await readFileAsDataURL(file);
     const cleanName=file.name.replace(/\.[^.]+$/,'');
+    let audioData=null;let audioRef=null;
+    const idbKey='aud_'+ME+'_'+Date.now();
+    if(file.size>5*MB){
+      await saveToIDB(idbKey,dataUrl);
+      audioRef=idbKey;
+    }else{
+      audioData=dataUrl;
+    }
     const nr=push(ref(db,'messages/'+curChatId));
-    const msgData={id:nr.key,from:ME,text:'',audio:dataUrl,audioName:cleanName,audioSize:file.size,ts:Date.now(),replyTo:replyTo?replyTo.msgId:null,edited:false,deleted:false};
+    const msgData={id:nr.key,from:ME,text:'',audioName:cleanName,audioSize:file.size,ts:Date.now(),replyTo:replyTo?replyTo.msgId:null,edited:false,deleted:false};
+    if(audioData)msgData.audio=audioData;
+    if(audioRef)msgData.audioRef=audioRef;
     await set(nr,msgData);
     await update(ref(db,'chats/'+curChatId),{lastMsg:'🎵 '+cleanName,lastMsgFrom:ME,lastMsgTime:Date.now()});
-    cancelReply();scrollMsgs();playSendSound();showToast('Музыка отправлена ✓');
+    cancelReply();scrollMsgs();playSendSound();showToast('Музыка отправлена ✓');incrementTask('music');
   }catch(e){
-    showToast('Ошибка: файл слишком большой. Попробуйте меньше 8 МБ.');
+    showToast('Ошибка отправки музыки: '+e.message);
     console.error('music send error',e);
   }
 };
@@ -1673,6 +1940,177 @@ window.closeModal=function(id){document.getElementById(id).classList.remove('on'
 // ── INPUT ──────────────────────────────────────────────────────────
 window.autoResize=function(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';};
 window.handleMsgKey=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}};
+
+// ══════════════════════════════════════════════════════════════════
+// MYCOINS SYSTEM
+// ══════════════════════════════════════════════════════════════════
+const GIFT_CATALOG=[
+  {id:'heart',   emoji:'❤️',  name:'Сердце',    price:15, desc:'Анимированное сердце'},
+  {id:'coin',    emoji:'🪙',  name:'Монетка',   price:20, desc:'Крутящаяся монетка'},
+  {id:'car',     emoji:'🏎️',  name:'Спорткар',  price:30, desc:'Быстрый спорткар'},
+  {id:'crown',   emoji:'👑',  name:'Корона',    price:50, desc:'Золотая корона'},
+  {id:'star',    emoji:'⭐',  name:'Звезда',    price:10, desc:'Яркая звезда'},
+  {id:'fire',    emoji:'🔥',  name:'Огонь',     price:12, desc:'Пламенный подарок'},
+];
+
+// Task templates (5 daily tasks, personalized by seeding with username+date)
+const TASK_TEMPLATES=[
+  {id:'send10',  title:'Активный чат',      desc:'Отправьте 10 сообщений',    goal:10,  reward:10, type:'msgs'},
+  {id:'send25',  title:'Общительный',        desc:'Отправьте 25 сообщений',    goal:25,  reward:18, type:'msgs'},
+  {id:'react5',  title:'Реакционист',        desc:'Поставьте 5 реакций',       goal:5,   reward:10, type:'reacts'},
+  {id:'photo3',  title:'Фотограф',           desc:'Отправьте 3 фото',          goal:3,   reward:12, type:'photos'},
+  {id:'reply5',  title:'Отвечай!',           desc:'Ответьте на 5 сообщений',   goal:5,   reward:8,  type:'replies'},
+  {id:'send50',  title:'Болтун дня',         desc:'Отправьте 50 сообщений',    goal:50,  reward:22, type:'msgs'},
+  {id:'video1',  title:'Видеоблогер',        desc:'Отправьте 1 видео',         goal:1,   reward:15, type:'videos'},
+  {id:'music1',  title:'Меломан',            desc:'Отправьте 1 аудио',         goal:1,   reward:13, type:'music'},
+  {id:'react10', title:'Эмодзи-мастер',      desc:'Поставьте 10 реакций',      goal:10,  reward:16, type:'reacts'},
+  {id:'fwd3',    title:'Пересыльщик',        desc:'Перешлите 3 сообщения',     goal:3,   reward:11, type:'fwd'},
+];
+
+let MY_COINS=0;
+let DAILY_TASKS=[];// [{...template, progress, claimed}]
+let TASK_COUNTERS={msgs:0,reacts:0,photos:0,replies:0,videos:0,music:0,fwd:0};
+let giftTargetUser=null,selectedGiftId=null;
+
+function getTodayKey(){return new Date().toISOString().slice(0,10);}
+function loadCoins(){
+  try{
+    const d=JSON.parse(localStorage.getItem('myx_coins_'+ME)||'{}');
+    MY_COINS=d.coins||0;
+    const tk=getTodayKey();
+    if(d.taskDay===tk){DAILY_TASKS=d.tasks||[];TASK_COUNTERS=d.counters||TASK_COUNTERS;}
+    else generateDailyTasks();
+  }catch{generateDailyTasks();}
+}
+function saveCoins(){
+  localStorage.setItem('myx_coins_'+ME,JSON.stringify({coins:MY_COINS,taskDay:getTodayKey(),tasks:DAILY_TASKS,counters:TASK_COUNTERS}));
+}
+function generateDailyTasks(){
+  // Pick 5 tasks based on hash of username+date for personalization
+  const seed=(ME+getTodayKey()).split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  const shuffled=[...TASK_TEMPLATES].sort((a,b)=>(seed*13+a.id.charCodeAt(0))%7-(seed*7+b.id.charCodeAt(0))%7);
+  DAILY_TASKS=shuffled.slice(0,5).map(t=>({...t,progress:0,claimed:false}));
+  TASK_COUNTERS={msgs:0,reacts:0,photos:0,replies:0,videos:0,music:0,fwd:0};
+  saveCoins();
+}
+function incrementTask(type,amount=1){
+  if(!DAILY_TASKS.length)return;
+  TASK_COUNTERS[type]=(TASK_COUNTERS[type]||0)+amount;
+  DAILY_TASKS.forEach(t=>{
+    if(t.type===type&&!t.claimed){t.progress=Math.min(t.goal,TASK_COUNTERS[type]);}
+  });
+  saveCoins();
+  // Re-render if tasks screen open
+  if(document.getElementById('s-tasks')&&!document.getElementById('s-tasks').classList.contains('hidden'))renderTasks();
+}
+function updateCoinsDisplay(){
+  const v=`${MY_COINS} Mycoins`;
+  const el=document.getElementById('s-coins-disp');if(el)el.querySelector('span').textContent=v;
+  const tc=document.getElementById('tasks-coins-val');if(tc)tc.textContent=MY_COINS;
+  const gc=document.getElementById('gift-my-coins');if(gc)gc.textContent=v;
+}
+
+window.openTasks=function(){
+  loadCoins();renderTasks();updateCoinsDisplay();
+  showScreen('s-tasks');
+};
+function renderTasks(){
+  const list=document.getElementById('tasks-list');if(!list)return;
+  const totalToday=DAILY_TASKS.reduce((a,t)=>a+(t.claimed?t.reward:0),0);
+  list.innerHTML=`<div style="margin:8px 14px;font-size:12px;color:var(--t2)">Заработано сегодня: <strong style="color:#d97706">${totalToday}/70 Mycoins</strong></div>`
+    +DAILY_TASKS.map((t,i)=>{
+      const pct=Math.round(t.progress/t.goal*100);
+      const done=t.progress>=t.goal;
+      return`<div class="task-card${t.claimed?' done':''}">
+        <div style="position:absolute;top:12px;right:14px;font-size:20px">${taskEmoji(t.type)}</div>
+        <div class="task-title">${t.title}</div>
+        <div class="task-desc">${t.desc}</div>
+        <div class="task-prog"><div class="task-prog-fill" style="width:${pct}%"></div></div>
+        <div class="task-row">
+          <span style="font-size:12px;color:var(--t2)">${t.progress}/${t.goal}</span>
+          <div class="task-reward">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="#b45309"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" font-size="11" font-weight="900" fill="#fef3c7">M</text></svg>
+            +${t.reward}
+          </div>
+          ${done&&!t.claimed?`<button class="task-claim" onclick="claimTask(${i})">Забрать!</button>`:''}
+          ${t.claimed?`<span class="task-claimed">✓ Получено</span>`:''}
+        </div>
+      </div>`;
+    }).join('');
+}
+function taskEmoji(type){
+  return{msgs:'💬',reacts:'😍',photos:'📷',replies:'↩️',videos:'🎬',music:'🎵',fwd:'↪️'}[type]||'⭐';
+}
+window.claimTask=function(idx){
+  const t=DAILY_TASKS[idx];if(!t||t.claimed||t.progress<t.goal)return;
+  t.claimed=true;MY_COINS+=t.reward;saveCoins();updateCoinsDisplay();
+  // Coin fly animation
+  const el=document.createElement('div');el.className='coin-fly';el.textContent='🪙';
+  el.style.left=(window.innerWidth/2-14)+'px';el.style.top=(window.innerHeight/2)+'px';
+  document.body.appendChild(el);setTimeout(()=>el.remove(),800);
+  showToast('+'+t.reward+' Mycoins! 🪙');
+  renderTasks();
+  // Sync to Firebase
+  update(ref(db,'users/'+ME),{mycoins:MY_COINS}).catch(()=>{});
+};
+
+// Gift system
+window.openGifts=function(targetUser){
+  giftTargetUser=targetUser;selectedGiftId=null;
+  loadCoins();updateCoinsDisplay();
+  document.getElementById('gifts-title').textContent='Подарить: '+( ALL_USERS[targetUser]?.name||targetUser);
+  const grid=document.getElementById('gift-grid');
+  grid.innerHTML=GIFT_CATALOG.map(g=>`
+    <div class="gift-item" id="gitem_${g.id}" onclick="selectGift('${g.id}')">
+      <div class="gift-anim" style="animation-delay:${Math.random().toFixed(1)}s">${g.emoji}</div>
+      <div class="gift-name">${g.name}</div>
+      <div class="gift-price">${g.price} Mycoins</div>
+    </div>`).join('');
+  document.getElementById('gift-selected-info').style.display='none';
+  const btn=document.getElementById('gift-send-btn');
+  btn.disabled=true;btn.style.opacity='.4';
+  showScreen('s-gifts');
+};
+window.selectGift=function(id){
+  selectedGiftId=id;
+  const g=GIFT_CATALOG.find(x=>x.id===id);if(!g)return;
+  document.querySelectorAll('.gift-item').forEach(el=>el.classList.remove('sel'));
+  const item=document.getElementById('gitem_'+id);if(item)item.classList.add('sel');
+  document.getElementById('gift-sel-ico').textContent=g.emoji;
+  document.getElementById('gift-sel-name').textContent=g.name;
+  document.getElementById('gift-sel-price').textContent=g.price+' Mycoins';
+  document.getElementById('gift-selected-info').style.display='block';
+  const btn=document.getElementById('gift-send-btn');
+  const canAfford=MY_COINS>=g.price;
+  btn.disabled=!canAfford;btn.style.opacity=canAfford?'1':'.4';
+  if(!canAfford)showToast('Недостаточно Mycoins');
+};
+window.sendGift=async function(){
+  if(!selectedGiftId||!giftTargetUser)return;
+  const g=GIFT_CATALOG.find(x=>x.id===selectedGiftId);if(!g)return;
+  if(MY_COINS<g.price){showToast('Недостаточно Mycoins');return;}
+  MY_COINS-=g.price;saveCoins();updateCoinsDisplay();
+  // Save gift to recipient profile in Firebase
+  const giftData={id:push(ref(db,'_')).key,from:ME,fromName:ALL_USERS[ME]?.name||ME,emoji:g.emoji,name:g.name,price:g.price,ts:Date.now()};
+  const giftRef=push(ref(db,'gifts/'+giftTargetUser));
+  await set(giftRef,{...giftData,id:giftRef.key});
+  // Update giver's coins in Firebase
+  await update(ref(db,'users/'+ME),{mycoins:MY_COINS});
+  // Coin fly
+  const el=document.createElement('div');el.className='coin-fly';el.textContent=g.emoji;
+  el.style.left=(window.innerWidth/2-14)+'px';el.style.top=(window.innerHeight/2)+'px';
+  document.body.appendChild(el);setTimeout(()=>el.remove(),800);
+  showToast(`Подарок "${g.name}" отправлен! 🎁`);
+  goBack();
+};
+
+// Load gifts for a user's profile
+async function loadUserGifts(un){
+  try{
+    const snap=await get(ref(db,'gifts/'+un));
+    return snap.exists()?Object.values(snap.val()).sort((a,b)=>b.ts-a.ts):[];
+  }catch{return[];}
+}
 
 // ── BOOT ───────────────────────────────────────────────────────────
 loadSettings();
