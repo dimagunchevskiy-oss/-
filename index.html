@@ -133,8 +133,9 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
 .av.sm{width:42px;height:42px;font-size:15px}
 .av.xs{width:32px;height:32px;font-size:11px}
 .av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.odot{position:absolute;bottom:1px;right:1px;width:14px;height:14px;
-  background:var(--green);border-radius:50%;border:2.5px solid var(--bg)}
+.odot{position:absolute;bottom:2px;right:2px;width:13px;height:13px;
+  background:#4dff91;border-radius:50%;border:2.5px solid var(--bg);
+  box-shadow:0 0 0 1px rgba(0,0,0,.1)}
 .cinfo{flex:1;min-width:0}
 .crow{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:3px}
 .cname{font-size:15.5px;font-weight:600;white-space:nowrap;overflow:hidden;
@@ -142,9 +143,9 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
 .ctime{font-size:12px;color:var(--t3);flex-shrink:0}
 .cprev{font-size:13.5px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .you{color:var(--blue);font-weight:500}
-.ubadge{background:var(--blue);color:#fff;border-radius:12px;font-size:11.5px;font-weight:700;
-  padding:2px 8px;min-width:22px;text-align:center;flex-shrink:0;line-height:1.6;
-  box-shadow:0 2px 8px rgba(42,171,238,.4)}
+.ubadge{background:var(--accent);color:#fff;border-radius:50px;font-size:12px;font-weight:800;
+  padding:3px 8px;min-width:22px;text-align:center;flex-shrink:0;line-height:1.5;
+  box-shadow:0 2px 10px var(--accent3)}
 
 /* ═══ FAB ════════════════════════════════════════ */
 .fab{position:absolute;bottom:22px;right:18px;width:58px;height:58px;background:var(--blue);
@@ -586,8 +587,10 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
 .gift-name{font-size:12px;font-weight:700;color:var(--text)}
 .gift-price{font-size:11px;color:#d97706;font-weight:800}
 /* Profile gifts display */
-.gift-showcase{display:flex;flex-wrap:wrap;gap:10px;padding:12px 16px}
-.gift-bubble{background:var(--bg2);border-radius:18px;padding:10px 14px;display:flex;
+.gift-showcase{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 14px}
+.gift-bubble-icon{width:46px;height:46px;flex-shrink:0;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 3px 10px rgba(0,0,0,.32))}
+.gift-bubble-icon svg{width:46px;height:46px}
+.gift-bubble{background:var(--bg2);border-radius:16px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;border:1.5px solid var(--border);
   align-items:center;gap:8px;border:1.5px solid var(--border);animation:giftPop .3s ease}
 @keyframes giftPop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
 .gift-from{font-size:11px;color:var(--t2)}
@@ -1182,19 +1185,22 @@ function subscribeGlobal(){
     const prev=Object.keys(ALL_CHATS);
     ALL_CHATS=snap.val()||{};
     renderChatList();if(curChatId)updateChatHeader();
-    // Subscribe to messages of chats not currently open for unread counts
+    // Subscribe to all chats' messages for unread badge counts
     Object.keys(ALL_CHATS).forEach(cid=>{
       if(!perChatUnsubs[cid]&&ALL_CHATS[cid]?.members?.[ME]){
         perChatUnsubs[cid]=onValue(ref(db,'messages/'+cid),snap2=>{
+          if(cid===curChatId){
+            if(UNREAD_CACHE[cid]){UNREAD_CACHE[cid]=0;renderChatList();}
+            return;
+          }
           const msgs=snap2.val()||{};
           let count=0;
           Object.values(msgs).forEach(m=>{
-            if(m.from!==ME&&!m.deleted&&!m.system&&(!m.readBy||!m.readBy[ME]))count++;
+            if(m.from!==ME&&!m.deleted&&!m.system&&!(m.readBy&&m.readBy[ME]))count++;
           });
-          if(UNREAD_CACHE[cid]!==count||(cid===curChatId&&count>0)){
-            UNREAD_CACHE[cid]=(cid===curChatId)?0:count;
-            renderChatList();
-          }
+          const prev=UNREAD_CACHE[cid]||0;
+          UNREAD_CACHE[cid]=count;
+          if(prev!==count)renderChatList();
         });
       }
     });
@@ -1215,15 +1221,16 @@ function subscribeMessages(chatId){
         }
       });
     }
-    isFirstLoad=false;
-    prevIds=ni;
-    // Only update MESSAGES if this is the active chat
-    recalcUnread(chatId, nm);
+    isFirstLoad=false;prevIds=ni;
+    // This is active chat — always 0 unread
     if(chatId===curChatId){
+      UNREAD_CACHE[chatId]=0;
       MESSAGES=nm;
       renderMessages();
+      renderChatList();
+    }else{
+      recalcUnread(chatId, nm);
     }
-    renderChatList();
   });
   onValue(ref(db,'chats/'+chatId+'/typing'),snap=>{
     if(chatId!==curChatId)return;
@@ -1279,15 +1286,18 @@ function renderChatList(filter=''){
     else if(isMe)snd='<span class="you">Вы: </span>';
     const draftTxt=DRAFTS[chat.id];
     const prev=draftTxt?`<span style="color:var(--orange);font-weight:600">Черновик: </span>${esc(draftTxt).slice(0,45)}`:(chat.lastMsg?`${snd}${esc(chat.lastMsg).slice(0,55)}`:'<em style="color:var(--t4)">Нет сообщений</em>');
-    let dot='';if(chat.type==='dm'){const o=Object.keys(chat.members||{}).find(m=>m!==ME);if(o&&(ALL_USERS[o]?.online&&ALL_USERS[o]?.lastSeen&&Date.now()-ALL_USERS[o].lastSeen<35000))dot='<div class="odot"></div>';}
+    let dot='';
+    if(chat.type==='dm'){const o=Object.keys(chat.members||{}).find(m=>m!==ME);if(o&&ALL_USERS[o]?.online&&ALL_USERS[o]?.lastSeen&&(Date.now()-ALL_USERS[o].lastSeen)<35000)dot='<div class="odot"></div>';}
+    // Groups: NO online dot
     const avEl=buildListAv(chat,dot);
     const unread=getUnread(chat.id);
     const badge=unread?`<div class="ubadge">${unread}</div>`:'';
-    return`<div class="ci" onclick="openChat('${chat.id}')">${avEl}<div class="cinfo"><div class="crow"><span class="cname">${nm}</span><div style="display:flex;align-items:center;gap:5px"><span class="ctime">${time}</span>${badge}</div></div><div class="cprev">${prev}</div></div></div>`;
+    const rightCol=`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0"><span class="ctime">${time}</span>${badge}</div>`;
+    return`<div class="ci" onclick="openChat('${chat.id}')">${avEl}<div class="cinfo"><div class="crow"><span class="cname">${nm}</span>${rightCol}</div><div class="cprev">${prev}</div></div></div>`;
   }).join('');
 }
 function buildListAv(chat,dot){
-  if(chat.type==='group'){const s=chat.avatar?`<img src="${chat.avatar}" alt="">`:`<span>${ini(chat.name||'G')}</span>`;const bg=chat.avatar?'transparent':(chat.color||'#2196F3');return`<div class="av" style="background:${bg};position:relative">${s}${dot}</div>`;}
+  if(chat.type==='group'){const s=chat.avatar?`<img src="${chat.avatar}" alt="">`:`<span>${ini(chat.name||'G')}</span>`;const bg=chat.avatar?'transparent':(chat.color||'#2196F3');return`<div class="av" style="background:${bg};position:relative">${s}</div>`;}
   const o=Object.keys(chat.members||{}).find(m=>m!==ME);const u=o?ALL_USERS[o]:null;
   if(!u)return`<div class="av" style="background:#999;position:relative">${ini('?')}${dot}</div>`;
   if(u.avatar)return`<div class="av" style="position:relative"><img src="${u.avatar}" alt="">${dot}</div>`;
@@ -1698,10 +1708,8 @@ window.openUserProfile=function(un){
     showcase.innerHTML=gifts.slice(0,8).map(g=>{
       const cat=gcMap[g.id]||{svg:'',id:g.id};
       const anim=GIFT_ANIMS[g.id]||'animation:giftFloat 2s ease-in-out infinite';
-      // Create inline SVG scaled to 36px
-      const svgScaled=cat.svg?(cat.svg.replace('viewBox="0 0 80 80"','viewBox="0 0 80 80" width="36" height="36"').replace(/style="[^"]*"/,`style="width:36px;height:36px"`)):'';
-      const iconEl=svgScaled?`<div style="width:36px;height:36px;flex-shrink:0;${anim};filter:drop-shadow(0 3px 6px rgba(0,0,0,.22))">${svgScaled}</div>`:'';
-      return`<div class="gift-bubble">${iconEl}<div style="min-width:0"><div style="font-size:13px;font-weight:700;white-space:nowrap">${esc(g.name)}</div><div class="gift-from" style="font-size:11px">от ${esc(g.fromName||g.from)}</div><div style="font-size:10px;color:#d97706;font-weight:700">${g.price} Mycoins</div></div></div>`;
+      const iconEl=cat.svg?`<div class="gift-bubble-icon" style="${anim}">${cat.svg}</div>`:'';
+      return`<div class="gift-bubble">${iconEl}<div style="font-size:12px;font-weight:700;color:var(--text)">${esc(g.name)}</div><div style="font-size:10px;color:var(--t2)">от <b>${esc(g.fromName||g.from)}</b></div></div>`;
     }).join('');
   });
   document.getElementById('prof-info-card').innerHTML=`<div class="srow nt"><div class="sico2" style="background:#5b8dee"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="sbody"><div class="slabel">Логин</div><div class="sval">@${u.username}</div></div></div>${u.bio?`<div class="srow nt"><div class="sico2" style="background:#8b5cf6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div class="sbody"><div class="slabel">О себе</div><div class="sval">${esc(u.bio)}</div></div></div>`:''}`;
@@ -1982,28 +1990,40 @@ window.seekAudio=function(e,msgId){
 window.sendMusicFile=async function(input){
   const file=input.files[0];if(!file||!curChatId)return;input.value='';
   const MB=1024*1024;
-  const MAX_MB=25;
-  if(file.size>MAX_MB*MB){showToast('Файл слишком большой (макс. '+MAX_MB+' МБ)');return;}
-  showToast('Загрузка музыки…');
+  const MAX_SIZE=50*MB;
+  if(file.size>MAX_SIZE){showToast('Файл слишком большой (макс. 50 МБ)');return;}
+  const cleanName=file.name.replace(/\.[^.]+$/,'');
+  showToast('⏳ Отправка: '+cleanName+'…');
   try{
-    const dataUrl=await readFileAsDataURL(file);
-    const cleanName=file.name.replace(/\.[^.]+$/,'');
     const nr=push(ref(db,'messages/'+curChatId));
+    const msgId=nr.key;
+    // Store in IndexedDB locally first
+    const idbKey='aud_'+ME+'_'+msgId;
+    const dataUrl=await readFileAsDataURL(file);
+    await saveToIDB(idbKey,dataUrl);
+    // Save message with IDB reference — works for sender immediately
+    // For Firebase we only store metadata + a short preview flag
     const msgData={
-      id:nr.key,from:ME,text:'',
-      audio:dataUrl,
+      id:msgId,from:ME,text:'',
+      audioRef:idbKey,
       audioName:cleanName,
       audioSize:file.size,
       ts:Date.now(),
       replyTo:replyTo?replyTo.msgId:null,
       edited:false,deleted:false
     };
+    // If file is small enough store base64 too so others can hear it
+    if(file.size<=8*MB){
+      msgData.audio=dataUrl;
+    }
     await set(nr,msgData);
     await update(ref(db,'chats/'+curChatId),{lastMsg:'🎵 '+cleanName,lastMsgFrom:ME,lastMsgTime:Date.now()});
-    cancelReply();scrollMsgs();playSendSound();showToast('Музыка отправлена ✓');incrementTask('music');
+    cancelReply();scrollMsgs();playSendSound();
+    showToast('🎵 Музыка отправлена!');
+    incrementTask('music');
   }catch(e){
-    showToast('Ошибка: '+(e.message||'неизвестная ошибка'));
     console.error('music send error',e);
+    showToast('Ошибка отправки. Попробуйте файл меньшего размера.');
   }
 };
 
@@ -2261,7 +2281,7 @@ window.openGifts=function(targetUser){
   grid.innerHTML=sorted.map(g=>{
     const anim=GIFT_ANIMS[g.id]||'animation:giftFloat 2s ease-in-out infinite';
     return`<div class="gift-item" id="gitem_${g.id}" onclick="selectGift('${g.id}')">
-      <div class="gift-visual" style="${anim};filter:drop-shadow(0 4px 10px rgba(0,0,0,.25))">${g.svg}</div>
+      <div class="gift-visual" style="${anim}">${g.svg}</div>
       <div class="gift-name">${g.name}</div>
       <div class="gift-price">${g.price} 🪙</div>
     </div>`;
@@ -2277,8 +2297,7 @@ window.selectGift=function(id){
   document.querySelectorAll('.gift-item').forEach(el=>el.classList.remove('sel'));
   const item=document.getElementById('gitem_'+id);if(item)item.classList.add('sel');
   const selAnim=GIFT_ANIMS[g.id]||'animation:giftFloat 2s ease-in-out infinite';
-  const selSvg=g.svg.replace('viewBox="0 0 80 80"','viewBox="0 0 80 80" width="38" height="38"');
-  document.getElementById('gift-sel-ico').innerHTML=`<div style="width:38px;height:38px;${selAnim};filter:drop-shadow(0 3px 8px rgba(0,0,0,.25))">${selSvg}</div>`;
+  document.getElementById('gift-sel-ico').innerHTML=`<div style="width:42px;height:42px;${selAnim};filter:drop-shadow(0 3px 10px rgba(0,0,0,.3))">${g.svg}</div>`;
   document.getElementById('gift-sel-name').textContent=g.name;
   document.getElementById('gift-sel-price').textContent=g.price+' Mycoins';
   document.getElementById('gift-selected-info').style.display='block';
@@ -2320,8 +2339,8 @@ function showGiftNotification(n, cat){
   const banner=document.createElement('div');
   banner.id='gift-notif-banner';
   const miniSvg=cat&&cat.svg?
-    `<div style="width:34px;height:34px;flex-shrink:0;filter:drop-shadow(0 2px 6px rgba(0,0,0,.3))">${cat.svg.replace('viewBox="0 0 80 80"','viewBox="0 0 80 80" width=\"34\" height=\"34\"')}</div>`
-    :`<span style="font-size:24px">🎁</span>`;
+    `<div style="width:38px;height:38px;flex-shrink:0;filter:drop-shadow(0 2px 8px rgba(0,0,0,.28));animation:giftFloat 2s ease-in-out infinite">${cat.svg}</div>`
+    :`<span style="font-size:28px">🎁</span>`;
   banner.innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;flex:1">
       ${miniSvg}
