@@ -284,25 +284,25 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
   transition:background .15s;padding:0}
 .msgsearch-close:hover{background:rgba(255,255,255,.16)}
 .scroll-down-btn{
-  position:absolute;bottom:12px;right:14px;
-  width:42px;height:42px;border-radius:50%;
-  background:var(--bg);border:1.5px solid var(--border);
-  box-shadow:0 4px 18px rgba(0,0,0,.28);
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;z-index:200;
-  transition:opacity .22s,transform .22s;
-  opacity:0;pointer-events:none;transform:scale(.8)}
-.scroll-down-btn.show{opacity:1;pointer-events:all;transform:scale(1)}
-.scroll-down-btn svg{color:var(--accent)}
-.scroll-down-btn .sdb-badge{
-  position:absolute;top:-5px;right:-5px;
-  min-width:18px;height:18px;border-radius:9px;
+  display:none;
+  position:fixed;right:16px;bottom:80px;
+  width:46px;height:46px;border-radius:50%;
+  background:var(--bg);border:2px solid var(--border);
+  box-shadow:0 4px 20px rgba(0,0,0,.4);
+  align-items:center;justify-content:center;
+  cursor:pointer;z-index:9999;
+  transition:transform .15s,box-shadow .15s}
+.scroll-down-btn.show{display:flex}
+.scroll-down-btn:active{transform:scale(.92)}
+.scroll-down-btn svg{color:var(--accent);pointer-events:none}
+.sdb-badge{
+  position:absolute;top:-4px;right:-4px;
+  min-width:17px;height:17px;border-radius:9px;
   background:var(--accent);color:#fff;
-  font-size:10px;font-weight:800;
-  display:flex;align-items:center;justify-content:center;
-  padding:0 4px;border:2px solid var(--bg);
-  opacity:0;transition:opacity .15s}
-.scroll-down-btn.show .sdb-badge.has-count{opacity:1}
+  font-size:10px;font-weight:800;line-height:17px;
+  text-align:center;padding:0 3px;
+  border:2px solid var(--bg);display:none}
+.sdb-badge.vis{display:block}
 .msg-highlight .mtext{background:linear-gradient(135deg,rgba(255,215,0,.3),rgba(255,165,0,.2))!important;border-radius:6px!important;padding:1px 3px!important;outline:2px solid rgba(255,200,0,.4)!important}
 .msg-search-active{box-shadow:0 0 0 2px var(--accent),0 4px 20px rgba(0,0,0,.3)!important;border-radius:12px;transition:box-shadow .3s}
 
@@ -1997,18 +1997,17 @@ function renderAllMessages(onDone){
 function scrollMsgs(){
   const b=document.getElementById('msgs-body');
   if(!b)return;
-  b.scrollTop=b.scrollHeight+9999;
-  document.getElementById('scroll-down-btn')?.classList.remove('show');
+  b.scrollTop=b.scrollHeight;
+  const btn=document.getElementById('scroll-down-btn');
+  if(btn)btn.classList.remove('show');
 }
 
 function initScrollBtn(){
-  // Position button above cfooter
   const footer=document.querySelector('.cfooter');
   const btn=document.getElementById('scroll-down-btn');
   if(footer&&btn){
-    btn.style.bottom=(footer.offsetHeight+12)+'px';
+    btn.style.bottom=(footer.offsetHeight+14)+'px';
   }
-  // Re-attach scroll listener to msgs-body (may be fresh element after chat switch)
   const body=document.getElementById('msgs-body');
   if(!body)return;
   body.removeEventListener('scroll',_onMsgsScroll);
@@ -2016,26 +2015,22 @@ function initScrollBtn(){
 }
 // One global scroll listener — attached once on page load
 function _setupScrollListener(){
-  // Attach directly to msgs-body — the only scrollable element in chat
-  const body=document.getElementById('msgs-body');
-  if(!body)return;
-  body.addEventListener('scroll', _onMsgsScroll, {passive:true});
+  // initScrollBtn handles this per-chat now
 }
 function _onMsgsScroll(){
   const body=document.getElementById('msgs-body');
   const btn=document.getElementById('scroll-down-btn');
   if(!body||!btn)return;
   const fromBottom=body.scrollHeight-body.scrollTop-body.clientHeight;
-  if(fromBottom>200){
-    btn.classList.add('show');
+  const show=fromBottom>220;
+  btn.classList.toggle('show',show);
+  if(show){
     const unread=UNREAD_CACHE[curChatId]||0;
     const badge=document.getElementById('sdb-badge');
     if(badge){
-      badge.textContent=unread>99?'99+':unread>0?String(unread):'';
+      badge.textContent=unread>0?(unread>99?'99+':String(unread)):'';
       badge.classList.toggle('vis',unread>0);
     }
-  }else{
-    btn.classList.remove('show');
   }
 }
 window.scrollToMsg=function(id){const el=document.querySelector(`.mw[data-id="${id}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});const bubble=el.querySelector('.mb');if(bubble){bubble.style.transition='box-shadow .2s';bubble.style.boxShadow=`0 0 0 3px var(--blue), 0 0 20px rgba(42,171,238,.35)`;setTimeout(()=>{bubble.style.boxShadow='';bubble.style.transition='';},1600);}else{el.style.outline='2px solid var(--blue)';el.style.borderRadius='12px';setTimeout(()=>{el.style.outline='';},1500);}}};
