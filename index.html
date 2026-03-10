@@ -968,9 +968,9 @@ const WALLPAPERS=[
 // All emojis used in both ctx-panel reaction strip AND emoji input panel
 // Stickers — large emoji sent as sticker messages
 const STICKERS=[
-  '❤️','🔥','⭐','💯','🎉','🚀','💀','🥶','😍','🤣',
-  '😭','😤','🥳','🤩','😴','💪','🤯','🫶','👑','💎',
-  '🌊','🌈','🍕','🎯','🏆','🦋','🐉','💫','✨','🌟',
+  '😁','🥹','😏','🙃','🍓','❤️','🔥','⭐','💯','🎉',
+  '💀','🥶','😍','🤣','😭','🥳','🤩','😴','💪','🤯',
+  '🫶','👑','💎','🌊','🎯','🏆','💫','✨','🌟','🫠',
 ];
 const ALL_EMOJIS=['😁','🥹','😅','😏','🥲','🤣','😛','😄','😮','👍','🫣','🙃','🍓','🙈','❤️','🔥','👎','😢','😡','🤩','🥰','💯','🎉','✅','🙏','👋','😍','🥳','😴','💪','🚀','⭐','🎯','🤯','💀','🫶','🤝','👏','😀','😂','😎','🤔','🥺','😤','🤪','😑','🙄','😬','🤗','🤭','😇','🥶','🤑','🤫','🤐','😶','🫠'];
 
@@ -1596,7 +1596,19 @@ window.startReply=function(msgId){const msg=MESSAGES[msgId];if(!msg)return;reply
 window.cancelReply=function(){replyTo=null;document.getElementById('reply-bar').classList.remove('on');};
 window.startEdit=function(msgId){const msg=MESSAGES[msgId];if(!msg)return;editMsgId=msgId;const inp=document.getElementById('msg-inp');inp.value=msg.text||'';autoResize(inp);document.getElementById('eb-text').textContent=(msg.text||'').slice(0,60);document.getElementById('edit-bar').classList.add('on');inp.focus();};
 window.cancelEdit=function(){editMsgId=null;document.getElementById('edit-bar').classList.remove('on');document.getElementById('msg-inp').value='';};
-window.deleteMsg=async function(msgId){if(!curChatId)return;await remove(ref(db,`messages/${curChatId}/${msgId}`));const rem=Object.values(MESSAGES).filter(m=>m.id!==msgId).sort((a,b)=>b.ts-a.ts);if(rem.length)await update(ref(db,'chats/'+curChatId),{lastMsg:rem[0].text||'📷 Медиа',lastMsgFrom:rem[0].from,lastMsgTime:rem[0].ts});else await update(ref(db,'chats/'+curChatId),{lastMsg:'',lastMsgFrom:'',lastMsgTime:0});};
+window.deleteMsg=async function(msgId){
+  if(!curChatId)return;
+  // Immediately remove from DOM
+  const el=document.querySelector('.mw[data-id="'+msgId+'"]');
+  if(el)el.remove();
+  // Remove from local cache
+  delete MESSAGES[msgId];
+  // Remove from Firebase
+  await remove(ref(db,`messages/${curChatId}/${msgId}`));
+  const rem=Object.values(MESSAGES).sort((a,b)=>b.ts-a.ts);
+  if(rem.length)await update(ref(db,'chats/'+curChatId),{lastMsg:rem[0].text||'📷 Медиа',lastMsgFrom:rem[0].from,lastMsgTime:rem[0].ts});
+  else await update(ref(db,'chats/'+curChatId),{lastMsg:'',lastMsgFrom:'',lastMsgTime:0});
+};
 
 // ── SEND TEXT ──────────────────────────────────────────────────────
 window.sendMessage=async function(){
@@ -1775,20 +1787,15 @@ window.openUserProfile=function(un){
       const anim=GIFT_ANIMS[g.id]||'animation:giftFloat 2s ease-in-out infinite';
       const card=document.createElement('div');
       card.className='gift-bubble';
-      // Icon container
-      const iconWrap=document.createElement('div');
-      iconWrap.className='gift-bubble-icon';
-      iconWrap.style.cssText=anim;
       if(cat&&cat.svg){
-        // Parse SVG properly using DOMParser
-        const parser=new DOMParser();
-        const svgDoc=parser.parseFromString(cat.svg,'image/svg+xml');
-        const svgEl=svgDoc.documentElement;
-        svgEl.setAttribute('width','46');svgEl.setAttribute('height','46');
-        svgEl.style.width='46px';svgEl.style.height='46px';
-        iconWrap.appendChild(svgEl);
+        // Use img with data URI — guaranteed to render SVG with gradients
+        const svgB64=btoa(unescape(encodeURIComponent(cat.svg)));
+        const imgEl=document.createElement('img');
+        imgEl.src='data:image/svg+xml;base64,'+svgB64;
+        imgEl.width=54;imgEl.height=54;
+        imgEl.style.cssText=anim+';display:block';
+        card.appendChild(imgEl);
       }
-      card.appendChild(iconWrap);
       const nameEl=document.createElement('div');
       nameEl.style.cssText='font-size:12px;font-weight:700;color:var(--text)';
       nameEl.textContent=g.name;
@@ -2157,127 +2164,13 @@ window.handleMsgKey=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefaul
 // MYCOINS SYSTEM
 // ══════════════════════════════════════════════════════════════════
 const GIFT_CATALOG=[
-  {id:'star', name:'Звезда', price:10, svg:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <radialGradient id="sg" cx="50%" cy="35%" r="65%">
-    <stop offset="0%" stop-color="#fffde7"/><stop offset="40%" stop-color="#ffee58"/><stop offset="100%" stop-color="#f57f17"/>
-  </radialGradient>
-  <filter id="sf" x="-20%" y="-20%" width="140%" height="140%">
-    <feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-  </filter>
-</defs>
-<polygon points="40,6 47,28 72,28 52,43 59,65 40,50 21,65 28,43 8,28 33,28" fill="url(#sg)" stroke="#f57f17" stroke-width="1.5" filter="url(#sf)"/>
-<polygon points="40,14 45,28 59,28 48,37 52,51 40,42 28,51 32,37 21,28 35,28" fill="rgba(255,255,255,.3)"/>
-<circle cx="34" cy="22" r="3" fill="rgba(255,255,255,.5)"/>
-</svg>`},
-  {id:'fire', name:'Огонь', price:12, svg:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <linearGradient id="fg" x1="40" y1="5" x2="40" y2="72" gradientUnits="userSpaceOnUse">
-    <stop offset="0%" stop-color="#ff8a65"/><stop offset="50%" stop-color="#f44336"/><stop offset="100%" stop-color="#b71c1c"/>
-  </linearGradient>
-  <linearGradient id="fg2" x1="40" y1="25" x2="40" y2="68" gradientUnits="userSpaceOnUse">
-    <stop offset="0%" stop-color="#ffee58"/><stop offset="100%" stop-color="#ff9800"/>
-  </linearGradient>
-  <filter id="ff"><feGaussianBlur stdDeviation="1" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-</defs>
-<path d="M40 5 C30 18 17 22 19 38 C21 52 30 64 40 70 C50 64 59 52 61 38 C63 22 50 18 40 5Z" fill="url(#fg)" filter="url(#ff)"/>
-<path d="M40 26 C35 35 29 38 31 47 C33 54 37 59 40 62 C43 59 47 54 49 47 C51 38 45 35 40 26Z" fill="url(#fg2)"/>
-<path d="M40 42 C38 46 37 49 38 52 C39 54 40 55 40 55 C40 55 41 54 42 52 C43 49 42 46 40 42Z" fill="#fff9c4"/>
-<circle cx="32" cy="34" r="2.5" fill="rgba(255,200,0,.4)"/>
-</svg>`},
-  {id:'heart', name:'Сердце', price:15, svg:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <linearGradient id="hg" x1="40" y1="8" x2="40" y2="70" gradientUnits="userSpaceOnUse">
-    <stop offset="0%" stop-color="#f48fb1"/><stop offset="60%" stop-color="#e91e63"/><stop offset="100%" stop-color="#880e4f"/>
-  </linearGradient>
-  <filter id="hf"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-</defs>
-<path d="M40 68 C40 68 10 50 10 28 C10 18 18 10 28 10 C34 10 39 13 40 18 C41 13 46 10 52 10 C62 10 70 18 70 28 C70 50 40 68 40 68Z" fill="url(#hg)" stroke="#880e4f" stroke-width="1" filter="url(#hf)"/>
-<path d="M20 22 C18 27 20 34 25 39" stroke="rgba(255,255,255,.45)" stroke-width="3.5" stroke-linecap="round" fill="none"/>
-<ellipse cx="30" cy="20" rx="6" ry="4" fill="rgba(255,255,255,.22)" transform="rotate(-25 30 20)"/>
-<ellipse cx="44" cy="16" rx="3" ry="2" fill="rgba(255,255,255,.18)" transform="rotate(-10 44 16)"/>
-</svg>`},
-  {id:'coin', name:'Монета', price:20, svg:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <linearGradient id="cg" x1="18" y1="18" x2="62" y2="62" gradientUnits="userSpaceOnUse">
-    <stop offset="0%" stop-color="#fff9c4"/><stop offset="35%" stop-color="#fdd835"/><stop offset="100%" stop-color="#e65100"/>
-  </linearGradient>
-  <linearGradient id="cg2" x1="18" y1="18" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-    <stop offset="0%" stop-color="rgba(255,255,255,.6)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-  </linearGradient>
-  <filter id="cf"><feGaussianBlur stdDeviation="1" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-</defs>
-<circle cx="40" cy="40" r="32" fill="url(#cg)" stroke="#bf360c" stroke-width="2" filter="url(#cf)"/>
-<circle cx="40" cy="40" r="26" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"/>
-<circle cx="40" cy="40" r="22" fill="none" stroke="rgba(0,0,0,.1)" stroke-width="1"/>
-<text x="40" y="50" text-anchor="middle" font-size="26" font-weight="900" fill="#4e342e" font-family="Georgia,serif" letter-spacing="-1">M</text>
-<ellipse cx="28" cy="26" rx="7" ry="4" fill="url(#cg2)" transform="rotate(-35 28 26)"/>
-</svg>`},
-  {id:'car', name:'Спорткар', price:30, svg:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <linearGradient id="carG" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ef5350"/><stop offset="100%" stop-color="#b71c1c"/></linearGradient>
-  <linearGradient id="carG2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff8a80"/><stop offset="100%" stop-color="#ef5350"/></linearGradient>
-  <filter id="carf"><feGaussianBlur stdDeviation=".8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-</defs>
-<rect x="6" y="42" width="68" height="18" rx="6" fill="url(#carG)" filter="url(#carf)"/>
-<path d="M14 42 C16 27 26 21 40 21 C54 21 64 27 66 42Z" fill="url(#carG2)"/>
-<rect x="22" y="26" width="36" height="13" rx="4" fill="#b3e5fc" opacity=".85"/>
-<line x1="40" y1="26" x2="40" y2="39" stroke="rgba(0,0,0,.12)" stroke-width="1.5"/>
-<rect x="42" y="28" width="12" height="9" rx="3" fill="#e1f5fe" opacity=".6"/>
-<circle cx="21" cy="60" r="9" fill="#212121" stroke="#757575" stroke-width="2"/>
-<circle cx="21" cy="60" r="4" fill="#9e9e9e"/>
-<circle cx="21" cy="60" r="1.5" fill="#bdbdbd"/>
-<circle cx="59" cy="60" r="9" fill="#212121" stroke="#757575" stroke-width="2"/>
-<circle cx="59" cy="60" r="4" fill="#9e9e9e"/>
-<circle cx="59" cy="60" r="1.5" fill="#bdbdbd"/>
-<rect x="6" y="46" width="13" height="5" rx="2.5" fill="#fff9c4" opacity=".95"/>
-<rect x="61" y="46" width="13" height="5" rx="2.5" fill="#ff5722" opacity=".85"/>
-<path d="M8 50 C6 48 6 46 8 46" stroke="#ff8f00" stroke-width="1" fill="none"/>
-</svg>`},
-  {id:'diamond', name:'Бриллиант', price:40, svg:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <linearGradient id="dg" x1="10" y1="10" x2="70" y2="70" gradientUnits="userSpaceOnUse">
-    <stop offset="0%" stop-color="#e1f5fe"/><stop offset="40%" stop-color="#29b6f6"/><stop offset="100%" stop-color="#0277bd"/>
-  </linearGradient>
-  <linearGradient id="dg2" x1="10" y1="10" x2="50" y2="32" gradientUnits="userSpaceOnUse">
-    <stop offset="0%" stop-color="rgba(255,255,255,.9)"/><stop offset="100%" stop-color="rgba(41,182,246,.3)"/>
-  </linearGradient>
-  <linearGradient id="dg3" x1="10" y1="32" x2="40" y2="72" gradientUnits="userSpaceOnUse">
-    <stop offset="0%" stop-color="#0288d1"/><stop offset="100%" stop-color="#01579b"/>
-  </linearGradient>
-  <filter id="df"><feGaussianBlur stdDeviation="1" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-</defs>
-<polygon points="40,7 70,32 40,73 10,32" fill="url(#dg)" stroke="#0277bd" stroke-width="1.5" filter="url(#df)"/>
-<polygon points="40,7 70,32 40,32" fill="url(#dg2)"/>
-<polygon points="10,32 40,32 40,73" fill="url(#dg3)" opacity=".7"/>
-<polygon points="40,32 70,32 55,52" fill="#0288d1" opacity=".35"/>
-<line x1="10" y1="32" x2="70" y2="32" stroke="rgba(255,255,255,.65)" stroke-width="2"/>
-<line x1="40" y1="7" x2="25" y2="32" stroke="rgba(255,255,255,.45)" stroke-width="1.5"/>
-<line x1="40" y1="7" x2="55" y2="32" stroke="rgba(255,255,255,.25)" stroke-width="1.5"/>
-<circle cx="40" cy="7" r="2.5" fill="white" opacity=".8"/>
-</svg>`},
-  {id:'crown', name:'Корона', price:50, svg:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <linearGradient id="crG" x1="40" y1="14" x2="40" y2="60" gradientUnits="userSpaceOnUse">
-    <stop offset="0%" stop-color="#fff176"/><stop offset="60%" stop-color="#fdd835"/><stop offset="100%" stop-color="#f57f17"/>
-  </linearGradient>
-  <linearGradient id="crG2" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0%" stop-color="#e65100"/><stop offset="100%" stop-color="#bf360c"/>
-  </linearGradient>
-  <filter id="crf"><feGaussianBlur stdDeviation="1" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-</defs>
-<polygon points="10,60 10,30 25,46 40,14 55,46 70,30 70,60" fill="url(#crG)" stroke="#e65100" stroke-width="2" stroke-linejoin="round" filter="url(#crf)"/>
-<rect x="10" y="60" width="60" height="11" rx="4" fill="url(#crG2)"/>
-<circle cx="40" cy="14" r="6.5" fill="#fff9c4" stroke="#f9a825" stroke-width="2"/>
-<circle cx="40" cy="14" r="3" fill="#ffca28"/>
-<circle cx="10" cy="30" r="5.5" fill="#fff176" stroke="#f9a825" stroke-width="2"/>
-<circle cx="70" cy="30" r="5.5" fill="#fff176" stroke="#f9a825" stroke-width="2"/>
-<circle cx="24" cy="65" r="3.5" fill="#fff9c4"/>
-<circle cx="40" cy="65" r="3.5" fill="#fff9c4"/>
-<circle cx="56" cy="65" r="3.5" fill="#fff9c4"/>
-<ellipse cx="26" cy="38" rx="8" ry="5" fill="rgba(255,255,255,.2)" transform="rotate(-18 26 38)"/>
-<polygon points="10,30 10,60 14,60 14,34" fill="rgba(0,0,0,.06)"/>
-</svg>`},
+  {id:'star', name:'Звезда', price:10, svg:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="g_star" cx="50%" cy="35%" r="65%"><stop offset="0%" stop-color="#fffde7"/><stop offset="40%" stop-color="#ffee58"/><stop offset="100%" stop-color="#f57f17"/></radialGradient></defs><polygon points="40,6 47,28 72,28 52,43 59,65 40,50 21,65 28,43 8,28 33,28" fill="url(#g_star)" stroke="#f57f17" stroke-width="1.5"/><polygon points="40,14 45,28 59,28 48,37 52,51 40,42 28,51 32,37 21,28 35,28" fill="rgba(255,255,255,.3)"/><circle cx="34" cy="22" r="3" fill="rgba(255,255,255,.5)"/><circle cx="46" cy="19" r="2" fill="rgba(255,255,255,.4)"/></svg>`},
+  {id:'fire', name:'Огонь', price:12, svg:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g_fire1" x1="40" y1="5" x2="40" y2="72" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#ff8a65"/><stop offset="50%" stop-color="#f44336"/><stop offset="100%" stop-color="#b71c1c"/></linearGradient><linearGradient id="g_fire2" x1="40" y1="25" x2="40" y2="68" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#ffee58"/><stop offset="100%" stop-color="#ff9800"/></linearGradient></defs><path d="M40 5 C30 18 17 22 19 38 C21 52 30 64 40 70 C50 64 59 52 61 38 C63 22 50 18 40 5Z" fill="url(#g_fire1)"/><path d="M40 26 C35 35 29 38 31 47 C33 54 37 59 40 62 C43 59 47 54 49 47 C51 38 45 35 40 26Z" fill="url(#g_fire2)"/><path d="M40 42 C38 46 37 49 38 52 C39 54 40 55 40 55 C40 55 41 54 42 52 C43 49 42 46 40 42Z" fill="#fff9c4"/></svg>`},
+  {id:'heart', name:'Сердце', price:15, svg:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g_heart" x1="40" y1="8" x2="40" y2="70" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#f48fb1"/><stop offset="60%" stop-color="#e91e63"/><stop offset="100%" stop-color="#880e4f"/></linearGradient></defs><path d="M40 68 C40 68 10 50 10 28 C10 18 18 10 28 10 C34 10 39 13 40 18 C41 13 46 10 52 10 C62 10 70 18 70 28 C70 50 40 68 40 68Z" fill="url(#g_heart)" stroke="#880e4f" stroke-width="1"/><path d="M20 22 C18 27 20 34 25 39" stroke="rgba(255,255,255,.45)" stroke-width="3.5" stroke-linecap="round" fill="none"/><ellipse cx="30" cy="20" rx="6" ry="4" fill="rgba(255,255,255,.22)" transform="rotate(-25 30 20)"/></svg>`},
+  {id:'coin', name:'Монета', price:20, svg:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g_coin1" x1="18" y1="18" x2="62" y2="62" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#fff9c4"/><stop offset="35%" stop-color="#fdd835"/><stop offset="100%" stop-color="#e65100"/></linearGradient><linearGradient id="g_coin2" x1="18" y1="18" x2="40" y2="40" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="rgba(255,255,255,.6)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></linearGradient></defs><circle cx="40" cy="40" r="32" fill="url(#g_coin1)" stroke="#bf360c" stroke-width="2"/><circle cx="40" cy="40" r="26" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"/><text x="40" y="50" text-anchor="middle" font-size="26" font-weight="900" fill="#4e342e" font-family="Georgia,serif">M</text><ellipse cx="28" cy="26" rx="7" ry="4" fill="url(#g_coin2)" transform="rotate(-35 28 26)"/></svg>`},
+  {id:'car', name:'Спорткар', price:30, svg:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g_car1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ef5350"/><stop offset="100%" stop-color="#b71c1c"/></linearGradient><linearGradient id="g_car2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff8a80"/><stop offset="100%" stop-color="#ef5350"/></linearGradient></defs><rect x="6" y="42" width="68" height="18" rx="6" fill="url(#g_car1)"/><path d="M14 42 C16 27 26 21 40 21 C54 21 64 27 66 42Z" fill="url(#g_car2)"/><rect x="22" y="26" width="36" height="13" rx="4" fill="#b3e5fc" opacity=".85"/><line x1="40" y1="26" x2="40" y2="39" stroke="rgba(0,0,0,.12)" stroke-width="1.5"/><circle cx="21" cy="60" r="9" fill="#212121" stroke="#757575" stroke-width="2"/><circle cx="21" cy="60" r="4" fill="#9e9e9e"/><circle cx="21" cy="60" r="1.5" fill="#bdbdbd"/><circle cx="59" cy="60" r="9" fill="#212121" stroke="#757575" stroke-width="2"/><circle cx="59" cy="60" r="4" fill="#9e9e9e"/><circle cx="59" cy="60" r="1.5" fill="#bdbdbd"/><rect x="6" y="46" width="13" height="5" rx="2.5" fill="#fff9c4" opacity=".95"/><rect x="61" y="46" width="13" height="5" rx="2.5" fill="#ff5722" opacity=".85"/></svg>`},
+  {id:'diamond', name:'Бриллиант', price:40, svg:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g_diam1" x1="10" y1="10" x2="70" y2="70" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#e1f5fe"/><stop offset="40%" stop-color="#29b6f6"/><stop offset="100%" stop-color="#0277bd"/></linearGradient><linearGradient id="g_diam2" x1="10" y1="10" x2="50" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="rgba(255,255,255,.9)"/><stop offset="100%" stop-color="rgba(41,182,246,.3)"/></linearGradient><linearGradient id="g_diam3" x1="10" y1="32" x2="40" y2="72" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0288d1"/><stop offset="100%" stop-color="#01579b"/></linearGradient></defs><polygon points="40,7 70,32 40,73 10,32" fill="url(#g_diam1)" stroke="#0277bd" stroke-width="1.5"/><polygon points="40,7 70,32 40,32" fill="url(#g_diam2)"/><polygon points="10,32 40,32 40,73" fill="url(#g_diam3)" opacity=".7"/><line x1="10" y1="32" x2="70" y2="32" stroke="rgba(255,255,255,.65)" stroke-width="2"/><line x1="40" y1="7" x2="25" y2="32" stroke="rgba(255,255,255,.45)" stroke-width="1.5"/><line x1="40" y1="7" x2="55" y2="32" stroke="rgba(255,255,255,.25)" stroke-width="1.5"/><circle cx="40" cy="7" r="2.5" fill="white" opacity=".8"/></svg>`},
+  {id:'crown', name:'Корона', price:50, svg:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g_crown1" x1="40" y1="14" x2="40" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#fff176"/><stop offset="60%" stop-color="#fdd835"/><stop offset="100%" stop-color="#f57f17"/></linearGradient><linearGradient id="g_crown2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#e65100"/><stop offset="100%" stop-color="#bf360c"/></linearGradient></defs><polygon points="10,60 10,30 25,46 40,14 55,46 70,30 70,60" fill="url(#g_crown1)" stroke="#e65100" stroke-width="2" stroke-linejoin="round"/><rect x="10" y="60" width="60" height="11" rx="4" fill="url(#g_crown2)"/><circle cx="40" cy="14" r="6.5" fill="#fff9c4" stroke="#f9a825" stroke-width="2"/><circle cx="40" cy="14" r="3" fill="#ffca28"/><circle cx="10" cy="30" r="5.5" fill="#fff176" stroke="#f9a825" stroke-width="2"/><circle cx="70" cy="30" r="5.5" fill="#fff176" stroke="#f9a825" stroke-width="2"/><circle cx="24" cy="65" r="3.5" fill="#fff9c4"/><circle cx="40" cy="65" r="3.5" fill="#fff9c4"/><circle cx="56" cy="65" r="3.5" fill="#fff9c4"/></svg>`},
 ];
 const GIFT_ANIMS={
   star:'animation:giftSpinY 4s ease-in-out infinite',
@@ -2405,11 +2298,12 @@ window.openGifts=function(targetUser){
     const visWrap=document.createElement('div');
     visWrap.className='gift-visual';visWrap.style.cssText=anim;
     if(g.svg){
-      const parser=new DOMParser();
-      const svgDoc=parser.parseFromString(g.svg,'image/svg+xml');
-      const svgEl=svgDoc.documentElement;
-      svgEl.setAttribute('width','68');svgEl.setAttribute('height','68');
-      visWrap.appendChild(svgEl);
+      const svgB64=btoa(unescape(encodeURIComponent(g.svg)));
+      const imgEl=document.createElement('img');
+      imgEl.src='data:image/svg+xml;base64,'+svgB64;
+      imgEl.width=68;imgEl.height=68;
+      imgEl.style.cssText='display:block;width:68px;height:68px';
+      visWrap.appendChild(imgEl);
     }
     const nm=document.createElement('div');nm.className='gift-name';nm.textContent=g.name;
     const pr=document.createElement('div');pr.className='gift-price';pr.textContent=g.price+' 🪙';
@@ -2432,9 +2326,11 @@ window.selectGift=function(id){
   const swrap=document.createElement('div');
   swrap.style.cssText='width:42px;height:42px;'+selAnim+';filter:drop-shadow(0 3px 10px rgba(0,0,0,.3))';
   if(g.svg){
-    const p2=new DOMParser();const sd2=p2.parseFromString(g.svg,'image/svg+xml');
-    const se2=sd2.documentElement;se2.setAttribute('width','42');se2.setAttribute('height','42');
-    swrap.appendChild(se2);
+    const svgB64sel=btoa(unescape(encodeURIComponent(g.svg)));
+    const imgSel=document.createElement('img');
+    imgSel.src='data:image/svg+xml;base64,'+svgB64sel;
+    imgSel.style.cssText='width:42px;height:42px;display:block';
+    swrap.appendChild(imgSel);
   }
   selIco.appendChild(swrap);
   document.getElementById('gift-sel-name').textContent=g.name;
@@ -2477,15 +2373,11 @@ function showGiftNotification(n, cat){
   if(existing)existing.remove();
   const banner=document.createElement('div');
   banner.id='gift-notif-banner';
-  let miniSvgEl='';
+  let miniSvg='<span style="font-size:28px">🎁</span>';
   if(cat&&cat.svg){
-    const pw=document.createElement('div');
-    pw.style.cssText='width:38px;height:38px;flex-shrink:0;animation:giftFloat 2s ease-in-out infinite;filter:drop-shadow(0 2px 8px rgba(0,0,0,.28))';
-    const prs=new DOMParser();const psd=prs.parseFromString(cat.svg,'image/svg+xml');
-    const pse=psd.documentElement;pse.setAttribute('width','38');pse.setAttribute('height','38');
-    pw.appendChild(pse);miniSvgEl=pw.outerHTML;
-  }else{miniSvgEl='<span style="font-size:28px">🎁</span>';}
-  const miniSvg=miniSvgEl;
+    const svgB64n=btoa(unescape(encodeURIComponent(cat.svg)));
+    miniSvg=`<img src="data:image/svg+xml;base64,${svgB64n}" style="width:38px;height:38px;animation:giftFloat 2s ease-in-out infinite;filter:drop-shadow(0 2px 8px rgba(0,0,0,.28))">`;
+  }
   banner.innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;flex:1">
       ${miniSvg}
