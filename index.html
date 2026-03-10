@@ -1586,11 +1586,13 @@ function subscribeMessages(chatId){
       if(isFirstLoad){
         // First load: async batched render, scroll when done
         renderAllMessages(()=>{
-          requestAnimationFrame(()=>{
-            const firstUnread=document.querySelector('.mw[data-unread="1"]');
-            if(firstUnread){firstUnread.scrollIntoView({block:'center'});}
-            else{body.scrollTop=body.scrollHeight+9999;}
-          });
+          // onDone — все сообщения уже в DOM
+          const firstUnread=document.querySelector('.mw[data-unread="1"]');
+          if(firstUnread){
+            firstUnread.scrollIntoView({block:'center'});
+          }else{
+            body.scrollTop=9999999;
+          }
         });
       }else{
         // Incremental update
@@ -1997,7 +1999,7 @@ function renderAllMessages(onDone){
 function scrollMsgs(){
   const b=document.getElementById('msgs-body');
   if(!b)return;
-  b.scrollTop=b.scrollHeight;
+  b.scrollTop=9999999;
   const btn=document.getElementById('scroll-down-btn');
   if(btn)btn.classList.remove('show');
 }
@@ -2012,6 +2014,8 @@ function initScrollBtn(){
   if(!body)return;
   body.removeEventListener('scroll',_onMsgsScroll);
   body.addEventListener('scroll',_onMsgsScroll,{passive:true});
+  // Scroll to bottom on chat open
+  body.scrollTop=9999999;
 }
 // One global scroll listener — attached once on page load
 function _setupScrollListener(){
