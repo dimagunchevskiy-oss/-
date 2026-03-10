@@ -609,9 +609,9 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
 .gift-name{font-size:12px;font-weight:700;color:var(--text)}
 .gift-price{font-size:11px;color:#d97706;font-weight:800}
 /* Profile gifts display */
-.gift-showcase{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 14px}
+.gift-showcase{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px}
 
-.gift-bubble{background:linear-gradient(145deg,#1e2433,#161b27);border-radius:18px;padding:16px 10px 12px;display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;border:1.5px solid rgba(255,255,255,.1);box-shadow:0 4px 16px rgba(0,0,0,.3);
+.gift-bubble{background:linear-gradient(145deg,#1c2035,#141828);border-radius:20px;padding:16px 8px 14px;display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;border:1.5px solid rgba(255,255,255,.1);box-shadow:0 6px 20px rgba(0,0,0,.35);
   align-items:center;gap:8px;border:1.5px solid var(--border);animation:giftPop .3s ease}
 @keyframes giftPop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
 .gift-from{font-size:11px;color:var(--t2)}
@@ -1219,7 +1219,7 @@ function subscribeGlobal(){
         // Mark as read
         update(ref(db,'notifications/'+ME+'/'+nid),{read:true}).catch(()=>{});
         // Find gift catalog entry for SVG
-        const cat=GIFT_CATALOG.find(x=>x.id===n.giftId)||{svg:'🎁',id:n.giftId};
+        const cat=GIFT_CATALOG.find(x=>x.id===n.giftId)||GIFT_CATALOG[0];
         // Show gold notification banner
         showGiftNotification(n,cat);
       }
@@ -1460,7 +1460,24 @@ function renderMessages(){
     const isOut=msg.from===ME;
     if(isOut&&tickEl){const isRead=msg.readBy&&Object.keys(msg.readBy).some(k=>k!==ME);tickEl.innerHTML=isRead?TICK2:TICK1;}
     // Update deleted state
-    if(isDel){const mt=el.querySelector('.mtext');if(mt)mt.innerHTML='🚫 Сообщение удалено';}
+    if(isDel){
+      const mt=el.querySelector('.mtext');if(mt)mt.innerHTML='🚫 Сообщение удалено';
+      const mmed=el.querySelector('.mimg-wrap,.mvid-wrap,.mmusic');if(mmed)mmed.style.display='none';
+    }
+    // Update edited text — this is what was missing!
+    if(!isDel&&msg.edited){
+      const mt=el.querySelector('.mtext');
+      if(mt){
+        const newTxt=esc(msg.text||'');
+        if(mt.innerHTML!==newTxt)mt.innerHTML=newTxt;
+      }
+      // Show/update "ред." label
+      const meta=el.querySelector('.mmeta');
+      if(meta&&!el.querySelector('.edited-lbl')){
+        const elbl=document.createElement('span');elbl.className='edited-lbl';elbl.textContent='ред.';
+        meta.prepend(elbl);
+      }
+    }
   });
   // Add new messages
   let needsNew=false;
@@ -1698,7 +1715,17 @@ window.sendMessage=async function(){
   if(!text&&!editMsgId)return;if(!curChatId)return;
   inp.value='';inp.style.height='';document.getElementById('emoji-panel').style.display='none';
   if(curChatId&&ME)update(ref(db,`chats/${curChatId}/typing/${ME}`),{t:false,ts:0});
-  if(editMsgId){await update(ref(db,`messages/${curChatId}/${editMsgId}`),{text,edited:true,editedAt:Date.now()});await update(ref(db,'chats/'+curChatId),{lastMsg:text,lastMsgFrom:ME,lastMsgTime:Date.now()});cancelEdit();return;}
+  if(editMsgId){
+    const eid=editMsgId;
+    // Update local cache IMMEDIATELY so renderMessages picks it up
+    if(MESSAGES[eid]){MESSAGES[eid].text=text;MESSAGES[eid].edited=true;}
+    cancelEdit();
+    renderMessages(); // instant visual update
+    // Then write to Firebase
+    update(ref(db,`messages/${curChatId}/${eid}`),{text,edited:true,editedAt:Date.now()}).catch(()=>{});
+    update(ref(db,'chats/'+curChatId),{lastMsg:text,lastMsgFrom:ME,lastMsgTime:Date.now()}).catch(()=>{});
+    return;
+  }
   const nr=push(ref(db,'messages/'+curChatId));const msgId=nr.key;
   await set(nr,{id:msgId,from:ME,text,ts:Date.now(),replyTo:replyTo?replyTo.msgId:null,edited:false,deleted:false});
   // Increment unread for all members except sender
@@ -1848,25 +1875,30 @@ window.openUserProfile=function(un){
     if(!gifts.length){showcase.innerHTML='<div style="font-size:12px;color:var(--t2);padding:8px 16px">Нет подарков</div>';return;}
     const gcMap={};GIFT_CATALOG.forEach(x=>gcMap[x.id]=x);
     gifts.slice(0,9).forEach(g=>{
-      const cat=GIFT_CATALOG.find(x=>x.id===g.id)||{emoji:'🎁',color:'#fff',bg:'#222',name:g.id};
-      const anim=GIFT_ANIMS[g.id]||'animation:giftFloat 2s ease-in-out infinite';
+      // g.giftId = gift type ('star','fire'...), g.id = Firebase push key
+      const gtype=g.giftId||g.id;
+      const cat=GIFT_CATALOG.find(x=>x.id===gtype)||{emoji:'🎁',color:'#FFD700',bg:'linear-gradient(145deg,#3d2c00,#1a1400)',name:gtype};
+      const anim=GIFT_ANIMS[gtype]||'animation:giftFloat 2s ease-in-out infinite';
       const card=document.createElement('div');
       card.className='gift-bubble';
       // Big emoji icon in styled container
       const icon=document.createElement('div');
-      icon.style.cssText=`width:68px;height:68px;border-radius:18px;background:${cat.bg};`+
-        `display:flex;align-items:center;justify-content:center;font-size:38px;line-height:1;`+
-        `box-shadow:0 0 18px ${cat.color}55,inset 0 1px 0 rgba(255,255,255,.12);`+
-        `border:1.5px solid ${cat.color}55;cursor:pointer;transition:transform .15s;`;
+      icon.style.cssText=
+        `width:72px;height:72px;border-radius:20px;background:${cat.bg};`+
+        `display:flex;align-items:center;justify-content:center;font-size:40px;line-height:1;`+
+        `box-shadow:0 0 22px ${cat.color}66,0 4px 12px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.15);`+
+        `border:2px solid ${cat.color}66;cursor:pointer;transition:transform .15s;user-select:none;`;
       icon.textContent=cat.emoji;
+      let animTimeout;
       icon.addEventListener('click',()=>{
-        icon.style.cssText+=anim;
-        setTimeout(()=>{ icon.style.animation=''; },2500);
+        clearTimeout(animTimeout);
+        icon.style.animation=anim.replace('animation:','');
+        animTimeout=setTimeout(()=>{ icon.style.animation=''; },2500);
       });
       card.appendChild(icon);
       const fromEl=document.createElement('div');
-      fromEl.style.cssText='font-size:11px;color:var(--t2);margin-top:6px;text-align:center;line-height:1.4';
-      fromEl.innerHTML='от <b style="color:var(--accent)">'+(g.fromName||g.from)+'</b>';
+      fromEl.style.cssText='font-size:11px;color:rgba(255,255,255,.55);margin-top:7px;text-align:center;line-height:1.4;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+      fromEl.innerHTML='от <b style="color:'+cat.color+'">'+(g.fromName||g.from)+'</b>';
       card.appendChild(fromEl);
       showcase.appendChild(card);
     });
@@ -2429,7 +2461,7 @@ window.sendGift=async function(){
   // Save gift to recipient profile in Firebase
   const senderName=ALL_USERS[ME]?.name||ME;
   const recipientName=ALL_USERS[giftTargetUser]?.name||giftTargetUser;
-  const giftData={id:'tmp',from:ME,fromName:senderName,name:g.name,price:g.price,ts:Date.now()};
+  const giftData={id:'tmp',giftId:g.id,from:ME,fromName:senderName,name:g.name,price:g.price,ts:Date.now()};
   const giftRef=push(ref(db,'gifts/'+giftTargetUser));
   giftData.id=giftRef.key;
   await set(giftRef,giftData);
@@ -2485,7 +2517,16 @@ function showGiftNotification(n, cat){
 async function loadUserGifts(un){
   try{
     const snap=await get(ref(db,'gifts/'+un));
-    return snap.exists()?Object.values(snap.val()).sort((a,b)=>b.ts-a.ts):[];
+    if(!snap.exists())return[];
+    // Ensure giftId field exists (old records may only have 'name' field)
+    return Object.values(snap.val()).sort((a,b)=>b.ts-a.ts).map(g=>{
+      if(!g.giftId){
+        // Try to match by name for old records
+        const byName=GIFT_CATALOG.find(x=>x.name===g.name);
+        if(byName)g.giftId=byName.id;
+      }
+      return g;
+    });
   }catch{return[];}
 }
 
