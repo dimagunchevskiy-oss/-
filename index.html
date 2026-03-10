@@ -209,6 +209,28 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
 .mw.out .mmeta{justify-content:flex-end}
 .mtime{font-size:11px;color:var(--t3);flex-shrink:0}
 .edited-lbl{font-size:10px;color:var(--t3);font-style:italic}
+/* ── PUSH BANNER ─────────────────────────────── */
+.push-banner{position:fixed;top:12px;left:12px;right:12px;z-index:9999;
+  background:linear-gradient(135deg,var(--bg) 0%,var(--bg2) 100%);
+  border:1.5px solid var(--border);border-radius:18px;
+  padding:12px 14px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 8px 32px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.2);
+  animation:pushSlideIn .35s cubic-bezier(.34,1.56,.64,1) both;
+  max-width:420px;margin:0 auto}
+@keyframes pushSlideIn{from{transform:translateY(-110%);opacity:0}to{transform:translateY(0);opacity:1}}
+.push-banner-av{width:44px;height:44px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 40%,transparent)}
+.push-banner-body{flex:1;min-width:0}
+.push-banner-title{font-size:13px;font-weight:800;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.push-banner-text{font-size:12px;color:var(--t2);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.push-banner-close{background:none;border:none;color:var(--t3);
+  font-size:16px;padding:4px 6px;cursor:pointer;flex-shrink:0;
+  border-radius:8px;transition:color .15s}
+.push-banner-close:hover{color:var(--text)}
 
 /* ── POLL ─────────────────────────────────────────────── */
 .poll-wrap{background:rgba(0,0,0,.18);border-radius:14px;padding:12px;min-width:220px;max-width:280px}
@@ -1058,8 +1080,11 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 100px var(--bg) inset!important;
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{getDatabase,ref,set,get,push,update,remove,onValue}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import{getMessaging,getToken,onMessage}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 const FC={apiKey:"AIzaSyAWZh1laRi7xRK3-LXHpAChEsBpyOdUCbg",authDomain:"volleyball-a309b.firebaseapp.com",databaseURL:"https://volleyball-a309b-default-rtdb.firebaseio.com",projectId:"volleyball-a309b",storageBucket:"volleyball-a309b.firebasestorage.app",messagingSenderId:"869639306669",appId:"1:869639306669:web:020f71d494f268baad3524"};
 const app=initializeApp(FC);
+const messaging=getMessaging(app);
+const VAPID_KEY="BO6U5ph-Gkt-HnCX8vlqmbjxc-c7yLyCj4icwDlG6B7W8NNJDoDkvCn08gJ90LDs5DLNEslbF3dufKgwgc4kdeI";
 const db=getDatabase(app);
 
 // ── CONSTANTS ──────────────────────────────────────────────────────
@@ -1298,6 +1323,7 @@ function enterApp(){
   try{const rs=localStorage.getItem('myx_read_'+ME);if(rs)readState=JSON.parse(rs);}catch{}
   subscribeGlobal();heartbeat();initEmojiPanel();buildWpGrid();applySettings();loadCoins();updateCoinsDisplay();
   ensureBotChat();
+  initPush();
   // Apply accent/font from user profile once users load
   setTimeout(async()=>{
     const snap=await get(ref(db,'users/'+ME));if(!snap.exists())return;
@@ -1306,6 +1332,77 @@ function enterApp(){
     if(u.fontId){const p=FONT_PRESETS.find(a=>a.id===u.fontId);if(p)applyFontColor(p);}
   },500);
 }
+// ══════════════════════════════════════════════
+// PUSH NOTIFICATIONS (FCM Web Push)
+// ══════════════════════════════════════════════
+async function initPush(){
+  // Register service worker first
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)){
+    console.log('Push not supported');return;
+  }
+  try{
+    const reg=await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    console.log('SW registered');
+    // Request permission
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){console.log('Push permission denied');return;}
+    // Get FCM token
+    const token=await getToken(messaging,{vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
+    if(!token){console.log('No FCM token');return;}
+    // Save token to Firebase under current user
+    await update(ref(db,'users/'+ME),{fcmToken:token,fcmUpdated:Date.now()});
+    console.log('FCM token saved ✓');
+    // Handle foreground messages (app is open)
+    onMessage(messaging,payload=>{
+      const n=payload.notification||{};
+      // If chat is NOT open or different chat — show in-app banner
+      const data=payload.data||{};
+      if(data.chatId&&data.chatId===curChatId)return; // already visible
+      showPushBanner(n.title||'MyMessend',n.body||'Новое сообщение',data.chatId,data.senderAvatar);
+    });
+  }catch(e){
+    console.warn('Push init error:',e);
+  }
+}
+
+// In-app push banner (shows when app is open but different chat)
+function showPushBanner(title,body,chatId,avatar){
+  // Remove existing
+  document.querySelectorAll('.push-banner').forEach(el=>el.remove());
+  const ban=document.createElement('div');
+  ban.className='push-banner';
+  ban.innerHTML=`
+    <div class="push-banner-av">${avatar?`<img src="${avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`:'💬'}</div>
+    <div class="push-banner-body">
+      <div class="push-banner-title">${esc(title)}</div>
+      <div class="push-banner-text">${esc(body)}</div>
+    </div>
+    <button class="push-banner-close" onclick="this.closest('.push-banner').remove()">✕</button>
+  `;
+  if(chatId){
+    ban.style.cursor='pointer';
+    ban.addEventListener('click',e=>{
+      if(e.target.classList.contains('push-banner-close'))return;
+      ban.remove();
+      openChat(chatId);
+    });
+  }
+  document.body.appendChild(ban);
+  playReceiveSound();
+  setTimeout(()=>ban.remove(),5000);
+}
+
+// Send push to a user when they receive a message
+async function sendPushToUser(toUsername,title,body,chatId){
+  // We can't call FCM directly from client — instead write to Firebase
+  // and the SW will pick it up, OR we trigger via background sync
+  // For now: store pending notification in Firebase — SW checks on focus
+  try{
+    const nr=push(ref(db,'push_queue'));
+    await set(nr,{to:toUsername,title,body,chatId,ts:Date.now(),sent:false});
+  }catch{}
+}
+
 function heartbeat(){if(!ME)return;update(ref(db,'users/'+ME),{online:true,lastSeen:Date.now()});setTimeout(heartbeat,25000);}
 window.addEventListener('beforeunload',()=>{if(ME)update(ref(db,'users/'+ME),{online:false,lastSeen:Date.now()});});
 document.addEventListener('visibilitychange',()=>{if(!ME)return;if(document.hidden)update(ref(db,'users/'+ME),{online:false,lastSeen:Date.now()});else update(ref(db,'users/'+ME),{online:true,lastSeen:Date.now()});});
@@ -1362,6 +1459,23 @@ function subscribeMessages(chatId){
           if(nm[id]?.from!==ME&&chatId===curChatId){
             playReceiveSound();
             update(ref(db,`messages/${chatId}/${id}/readBy`),{[ME]:true}).catch(()=>{});
+          }
+          // Send push to recipient if they're not in this chat
+          if(nm[id]?.from===ME){
+            const msg=nm[id];
+            const chat=ALL_CHATS[chatId];
+            if(chat?.members){
+              Object.keys(chat.members).forEach(async mem=>{
+                if(mem===ME)return;
+                const u=ALL_USERS[mem];
+                if(!u?.fcmToken)return;
+                const senderName=ALL_USERS[ME]?.name||ME;
+                const preview=msg.text?msg.text.slice(0,60):msg.image?'📷 Фото':msg.sticker?'Стикер':msg.poll?'📊 Опрос':'Сообщение';
+                // Store in push_queue for SW to process
+                const nr2=push(ref(db,'push_queue'));
+                set(nr2,{to:mem,fcmToken:u.fcmToken,title:senderName,body:preview,chatId,ts:Date.now(),sent:false}).catch(()=>{});
+              });
+            }
           }
         }
       });
