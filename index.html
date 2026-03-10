@@ -278,8 +278,31 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
 .msgsearch-nav{display:flex;gap:2px}
 .msgsearch-nav button{background:rgba(255,255,255,.07);border:none;color:var(--text);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background .15s}
 .msgsearch-nav button:hover{background:rgba(255,255,255,.14)}
-.msgsearch-close{background:none;border:none;color:var(--t2);font-size:13px;font-weight:700;padding:6px 8px;cursor:pointer;border-radius:8px;transition:color .15s;white-space:nowrap}
-.msgsearch-close:hover{color:var(--text)}
+.msgsearch-close{background:rgba(255,255,255,.08);border:none;color:var(--text);
+  width:34px;height:34px;flex-shrink:0;cursor:pointer;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;padding:0}
+.msgsearch-close:hover{background:rgba(255,255,255,.16)}
+.scroll-down-btn{
+  position:absolute;bottom:12px;right:14px;
+  width:42px;height:42px;border-radius:50%;
+  background:var(--bg);border:1.5px solid var(--border);
+  box-shadow:0 4px 18px rgba(0,0,0,.28);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:200;
+  transition:opacity .22s,transform .22s;
+  opacity:0;pointer-events:none;transform:scale(.8)}
+.scroll-down-btn.show{opacity:1;pointer-events:all;transform:scale(1)}
+.scroll-down-btn svg{color:var(--accent)}
+.scroll-down-btn .sdb-badge{
+  position:absolute;top:-5px;right:-5px;
+  min-width:18px;height:18px;border-radius:9px;
+  background:var(--accent);color:#fff;
+  font-size:10px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 4px;border:2px solid var(--bg);
+  opacity:0;transition:opacity .15s}
+.scroll-down-btn.show .sdb-badge.has-count{opacity:1}
 .msg-highlight .mtext{background:linear-gradient(135deg,rgba(255,215,0,.3),rgba(255,165,0,.2))!important;border-radius:6px!important;padding:1px 3px!important;outline:2px solid rgba(255,200,0,.4)!important}
 .msg-search-active{box-shadow:0 0 0 2px var(--accent),0 4px 20px rgba(0,0,0,.3)!important;border-radius:12px;transition:box-shadow .3s}
 
@@ -373,22 +396,23 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
 .ttxt{font-size:12px;color:var(--t2);font-style:italic}
 
 /* ═══ FOOTER ═════════════════════════════════════ */
-.cfooter{background:var(--bg);display:flex;align-items:flex-end;padding:8px 10px;
-  padding-bottom:max(10px,var(--bs));gap:7px;flex-shrink:0;border-top:1px solid var(--border)}
-.inprow{flex:1;display:flex;align-items:flex-end;background:var(--bg2);border-radius:24px;
-  padding:6px 12px 6px 14px;gap:6px;border:2px solid transparent;transition:all .2s}
+.cfooter{background:var(--bg);display:flex;align-items:flex-end;
+  padding:8px 8px max(10px,var(--bs)) 8px;
+  gap:6px;flex-shrink:0;border-top:1px solid var(--border)}
+.inprow{flex:1;min-width:0;display:flex;align-items:flex-end;background:var(--bg2);border-radius:24px;
+  padding:6px 10px 6px 14px;gap:4px;border:2px solid transparent;transition:all .2s}
 .inprow:focus-within{background:var(--bg);border-color:var(--blue);
   box-shadow:0 0 0 4px rgba(42,171,238,.09)}
 .msginp{flex:1;border:none;background:transparent;font-family:'Inter',sans-serif;
   font-size:15px;color:var(--text);outline:none;resize:none;max-height:120px;
   line-height:1.5;padding:2px 0}
 .msginp::placeholder{color:var(--t4)}
-.attachbtn{width:34px;height:34px;background:none;border:none;color:var(--t3);cursor:pointer;
+.attachbtn{width:36px;height:36px;flex-shrink:0;background:none;border:none;color:var(--t3);cursor:pointer;
   display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;
   padding:0;transition:color .15s}
 .attachbtn:active{color:var(--blue)}
 .attachbtn svg{width:22px;height:22px}
-.sendbtn{width:48px;height:48px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:50%;
+.sendbtn{width:44px;height:44px;flex-shrink:0;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:50%;
   display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;
   flex-shrink:0;box-shadow:0 4px 16px color-mix(in srgb,var(--accent) 45%,transparent),0 4px 14px rgba(42,171,238,.48);transition:all .15s}
 .sendbtn:active{transform:scale(.9);background:var(--blue2)}
@@ -829,7 +853,9 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 100px var(--bg) inset!important;
         <button onclick="nextMsgResult()" title="Следующее">↓</button>
       </div>
     </div>
-    <button class="msgsearch-close" onclick="closeMsgSearch()">✕ Закрыть</button>
+    <button class="msgsearch-close" onclick="closeMsgSearch()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
   </div>
   <div class="body chat-bg-default" id="msgs-body"></div>
   <div class="tbar" id="tbar"><div class="tdots"><span></span><span></span><span></span></div><span class="ttxt" id="ttxt"></span></div>
@@ -843,6 +869,10 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 100px var(--bg) inset!important;
     <div class="barinfo"><div class="barname">Редактирование</div><div class="bartext" id="eb-text"></div></div>
     <button class="barclose" onclick="cancelEdit()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
+  <button class="scroll-down-btn" id="scroll-down-btn" onclick="scrollMsgs();hideScrollBtn()" title="К последнему сообщению">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    <div class="sdb-badge" id="sdb-badge"></div>
+  </button>
   <div class="cfooter">
     <button class="attachbtn" onclick="showAttachMenu()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
@@ -1621,7 +1651,7 @@ window.openChat=function(chatId){
   // Cancel per-chat unread subscription — subscribeMessages handles active chat
   if(perChatUnsubs[chatId]){try{perChatUnsubs[chatId]();}catch{}delete perChatUnsubs[chatId];}
   markChatRead(chatId);
-  updateChatHeader();subscribeMessages(chatId);applyWallpaper();
+  updateChatHeader();subscribeMessages(chatId);applyWallpaper();initScrollBtn();
   // Restore draft
   setTimeout(()=>{
     const inp=document.getElementById('msg-inp');
@@ -1895,7 +1925,36 @@ function renderAllMessages(onDone){
   renderBatch();
 }
 
-function scrollMsgs(){const b=document.getElementById('msgs-body');requestAnimationFrame(()=>{b.scrollTop=b.scrollHeight+9999;});}
+function scrollMsgs(){
+  const b=document.getElementById('msgs-body');
+  requestAnimationFrame(()=>{b.scrollTop=b.scrollHeight+9999;});
+  hideScrollBtn();
+}
+function hideScrollBtn(){
+  const btn=document.getElementById('scroll-down-btn');
+  if(btn){btn.classList.remove('show');}
+}
+function initScrollBtn(){
+  const body=document.getElementById('msgs-body');
+  if(!body)return;
+  body.addEventListener('scroll',()=>{
+    const btn=document.getElementById('scroll-down-btn');
+    if(!btn)return;
+    const fromBottom=body.scrollHeight-body.scrollTop-body.clientHeight;
+    if(fromBottom>180){
+      btn.classList.add('show');
+      // Show unread count badge
+      const unread=UNREAD_CACHE[curChatId]||0;
+      const badge=document.getElementById('sdb-badge');
+      if(badge){
+        badge.textContent=unread>99?'99+':unread||'';
+        badge.classList.toggle('has-count',unread>0);
+      }
+    }else{
+      btn.classList.remove('show');
+    }
+  },{passive:true});
+}
 window.scrollToMsg=function(id){const el=document.querySelector(`.mw[data-id="${id}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});const bubble=el.querySelector('.mb');if(bubble){bubble.style.transition='box-shadow .2s';bubble.style.boxShadow=`0 0 0 3px var(--blue), 0 0 20px rgba(42,171,238,.35)`;setTimeout(()=>{bubble.style.boxShadow='';bubble.style.transition='';},1600);}else{el.style.outline='2px solid var(--blue)';el.style.borderRadius='12px';setTimeout(()=>{el.style.outline='';},1500);}}};
 
 // ── CONTEXT PANEL ──────────────────────────────────────────────────
