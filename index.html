@@ -702,6 +702,13 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
 .gift-visual{width:68px;height:68px;display:flex;align-items:center;justify-content:center}
 .gift-visual svg{width:68px;height:68px}
 @keyframes slideDown{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes giftGalaxy{
+  0%  {transform:scale(1)    rotate(0deg)  drop-shadow(0 0 6px #00E5FF)}
+  25% {transform:scale(1.18) rotate(15deg) drop-shadow(0 0 18px #7C4DFF)}
+  50% {transform:scale(1.08) rotate(0deg)  drop-shadow(0 0 28px #00E5FF) brightness(1.3)}
+  75% {transform:scale(1.18) rotate(-15deg)drop-shadow(0 0 18px #ff00cc)}
+  100%{transform:scale(1)    rotate(0deg)  drop-shadow(0 0 6px #00E5FF)}
+}
 @keyframes giftFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 @keyframes giftSpinY{0%,100%{transform:rotateY(0) scale(1)}50%{transform:rotateY(180deg) scale(1.08)}}
 @keyframes giftFlicker{0%,100%{transform:scaleY(1) translateY(0)}30%{transform:scaleY(1.08) translateY(-3px)}60%{transform:scaleY(.97) translateY(1px)}}
@@ -850,11 +857,9 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 100px var(--bg) inset!important;
     <div class="msgsearch-inner">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0;color:var(--t3)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input class="msgsearch-inp" id="msgsearch-inp" placeholder="Поиск…" oninput="onMsgSearch(this.value)" onkeydown="if(event.key==='Enter'){event.shiftKey?prevMsgResult():nextMsgResult()}">
-    </div>
-    <span class="msgsearch-count" id="msgsearch-count"></span>
-    <div class="msgsearch-nav">
-      <button onclick="prevMsgResult()">↑</button>
-      <button onclick="nextMsgResult()">↓</button>
+      <span class="msgsearch-count" id="msgsearch-count"></span>
+      <button class="msgsearch-nav-btn" onclick="prevMsgResult()">↑</button>
+      <button class="msgsearch-nav-btn" onclick="nextMsgResult()">↓</button>
     </div>
   </div>
   <div class="body chat-bg-default" id="msgs-body"></div>
@@ -1235,36 +1240,62 @@ function applyAccentColor(preset){
 }
 function applyFontColor(preset){
   const r=document.documentElement.style;
-  // Remove old style
   let st=document.getElementById('__font_grad');
   if(!st){st=document.createElement('style');st.id='__font_grad';document.head.appendChild(st);}
   if(preset.g){
-    // Gradient animated text
+    // Gradient: wrap text in span inside .mtext, leave emoji untouched
+    // We use a trick: color the .mtext element but EXCLUDE img/emoji via mix-blend
+    // Cleanest: use CSS to target only text nodes via a wrapper span
     st.textContent=`
-      .mtext,.mb .mtext{
+      .mtext .gtxt{
         background:linear-gradient(${preset.g});
         background-size:300% auto;
         -webkit-background-clip:text;
         -webkit-text-fill-color:transparent;
         background-clip:text;
         animation:fontShimmer 4s linear infinite;
+        display:inline;
       }
       @keyframes fontShimmer{0%{background-position:0% center}100%{background-position:300% center}}
     `;
     r.setProperty('--text', preset.color||'#e8eaf6');
     r.setProperty('--font-color', preset.color||'#e8eaf6');
+    // Wrap text nodes in .mtext with <span class="gtxt">
+    _applyGradientSpans(true);
   }else{
-    st.textContent='.mtext,.mb .mtext{background:none;-webkit-text-fill-color:inherit;background-clip:unset;animation:none}';
+    st.textContent='';
+    _applyGradientSpans(false);
     if(preset.color){
       r.setProperty('--text', preset.color);
       r.setProperty('--font-color', preset.color);
     }else{
-      // 'default' — remove custom color
       r.removeProperty('--text');
       r.removeProperty('--font-color');
-      st.textContent='';
     }
   }
+}
+// Wrap/unwrap text nodes in .mtext elements for gradient
+function _applyGradientSpans(on){
+  document.querySelectorAll('.mtext').forEach(el=>{
+    if(on){
+      // Wrap each text node in .gtxt span (skip if already done)
+      if(el.querySelector('.gtxt'))return;
+      el.childNodes.forEach(node=>{
+        if(node.nodeType===3&&node.textContent.trim()){
+          const sp=document.createElement('span');
+          sp.className='gtxt';
+          node.parentNode.insertBefore(sp,node);
+          sp.appendChild(node);
+        }
+      });
+    }else{
+      // Unwrap .gtxt spans
+      el.querySelectorAll('.gtxt').forEach(sp=>{
+        while(sp.firstChild)sp.parentNode.insertBefore(sp.firstChild,sp);
+        sp.remove();
+      });
+    }
+  });
 }
 
 // ── SETTINGS ───────────────────────────────────────────────────────
@@ -1469,6 +1500,9 @@ async function sendPushToUser(toUsername,title,body,chatId){
     await set(nr,{to:toUsername,title,body,chatId,ts:Date.now(),sent:false});
   }catch{}
 }
+
+// Init global scroll listener once
+_setupScrollListener();
 
 function heartbeat(){if(!ME)return;update(ref(db,'users/'+ME),{online:true,lastSeen:Date.now()});setTimeout(heartbeat,25000);}
 window.addEventListener('beforeunload',()=>{if(ME)update(ref(db,'users/'+ME),{online:false,lastSeen:Date.now()});});
@@ -1688,7 +1722,7 @@ window.openChat=function(chatId){
   // Cancel per-chat unread subscription — subscribeMessages handles active chat
   if(perChatUnsubs[chatId]){try{perChatUnsubs[chatId]();}catch{}delete perChatUnsubs[chatId];}
   markChatRead(chatId);
-  _scrollBtnInited=false;updateChatHeader();subscribeMessages(chatId);applyWallpaper();setTimeout(initScrollBtn,100);
+  updateChatHeader();subscribeMessages(chatId);applyWallpaper();setTimeout(initScrollBtn,50);
   // Restore draft
   setTimeout(()=>{
     const inp=document.getElementById('msg-inp');
@@ -1968,27 +2002,24 @@ function scrollMsgs(){
   b.scrollTo({top:b.scrollHeight+9999,behavior:'smooth'});
 }
 
-let _scrollBtnInited=false;
 function initScrollBtn(){
-  // Position button just above cfooter
+  // Recalculate button position above cfooter
   const footer=document.querySelector('.cfooter');
   const btn=document.getElementById('scroll-down-btn');
   if(footer&&btn){
-    const fh=footer.offsetHeight||64;
-    btn.style.bottom=(fh+10)+'px';
+    btn.style.bottom=(footer.getBoundingClientRect().height+12)+'px';
   }
-  // Scroll listener
-  const body=document.getElementById('msgs-body');
-  if(!body)return;
-  if(_scrollBtnInited)return; // only once
-  _scrollBtnInited=true;
-  body.addEventListener('scroll',_onMsgsScroll,{passive:true});
 }
-function _onMsgsScroll(){
+// One global scroll listener — attached once on page load
+function _setupScrollListener(){
+  // Use capturing on the msgs-body by polling its ID on each scroll event
+  document.addEventListener('scroll', _onMsgsScroll, {capture:true, passive:true});
+}
+function _onMsgsScroll(e){
   const body=document.getElementById('msgs-body');
+  if(!body||e.target!==body)return;
   const btn=document.getElementById('scroll-down-btn');
-  if(!body||!btn)return;
-  // Hide button when in a different screen
+  if(!btn)return;
   const chatScreen=document.getElementById('s-chat');
   if(!chatScreen||chatScreen.classList.contains('hidden')){
     btn.classList.remove('show');return;
@@ -2002,9 +2033,6 @@ function _onMsgsScroll(){
       badge.textContent=unread>99?'99+':unread>0?String(unread):'';
       badge.classList.toggle('vis',unread>0);
     }
-    // Keep bottom position correct (may change if bars appear)
-    const footer=document.querySelector('#s-chat .cfooter');
-    if(footer)btn.style.bottom=(footer.offsetHeight+10)+'px';
   }else{
     btn.classList.remove('show');
   }
@@ -2737,7 +2765,7 @@ const GIFT_CATALOG=[
   {id:'dragon',  name:'Дракон',     price:55,  emoji:'🐉', color:'#FF6D00', bg:'linear-gradient(145deg,#3d1500,#1a0900)'},
   // ── Tier 4 (80-100 монет) ──
   {id:'crystal', name:'Кристалл',   price:80,  emoji:'🔮', color:'#B39DDB', bg:'linear-gradient(145deg,#1a0038,#0d001a)'},
-  {id:'galaxy',  name:'Галактика',  price:100, emoji:'🌌', color:'#7C4DFF', bg:'linear-gradient(145deg,#05001a,#020010)'},
+  {id:'galaxy',  name:'Галактика',  price:100, emoji:'🌌', color:'#00E5FF', bg:'linear-gradient(145deg,#000d26,#001040,#0a0030)'},
 ];
 const GIFT_ANIMS={
   star:'animation:giftSpinY 4s ease-in-out infinite',
@@ -2757,7 +2785,7 @@ const GIFT_ANIMS={
   crown:'animation:giftFloat 2s ease-in-out infinite',
   dragon:'animation:giftFlicker 1.2s ease-in-out infinite',
   crystal:'animation:giftGlimmer 1.8s ease-in-out infinite',
-  galaxy:'animation:giftSpinY 6s linear infinite',
+  galaxy:'animation:giftGalaxy 3s ease-in-out infinite',
 };
 
 // Create a beautiful gift element (div with emoji) — works in ALL browsers
@@ -3419,4 +3447,4 @@ boot();
     <div class="sdb-badge" id="sdb-badge"></div>
   </button>
 </body>
-</html
+</html>
