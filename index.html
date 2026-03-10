@@ -596,9 +596,10 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
 .gift-price{font-size:11px;color:#d97706;font-weight:800}
 /* Profile gifts display */
 .gift-showcase{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 14px}
-.gift-bubble-icon{width:46px;height:46px;flex-shrink:0;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 3px 10px rgba(0,0,0,.32))}
-.gift-bubble-icon svg{width:46px;height:46px}
-.gift-bubble{background:var(--bg2);border-radius:16px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;border:1.5px solid var(--border);
+.gift-bubble-icon{width:54px;height:54px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;filter:drop-shadow(0 3px 10px rgba(0,0,0,.32));transition:transform .15s}
+.gift-bubble-icon:active{transform:scale(.9)}
+.gift-bubble-icon svg{width:54px!important;height:54px!important}
+.gift-bubble{background:var(--bg2);border-radius:16px;padding:12px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;border:1.5px solid var(--border);
   align-items:center;gap:8px;border:1.5px solid var(--border);animation:giftPop .3s ease}
 @keyframes giftPop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
 .gift-from{font-size:11px;color:var(--t2)}
@@ -1196,26 +1197,12 @@ function subscribeGlobal(){
     });
   });}
   chatUnsub=onValue(ref(db,'chats'),snap=>{
-    const prev=Object.keys(ALL_CHATS);
     ALL_CHATS=snap.val()||{};
     renderChatList();if(curChatId)updateChatHeader();
-    // Subscribe to all chats' messages for unread badge counts
+    // Subscribe to messages of new chats only
     Object.keys(ALL_CHATS).forEach(cid=>{
       if(!perChatUnsubs[cid]&&ALL_CHATS[cid]?.members?.[ME]){
-        perChatUnsubs[cid]=onValue(ref(db,'messages/'+cid),snap2=>{
-          if(cid===curChatId){
-            if(UNREAD_CACHE[cid]){UNREAD_CACHE[cid]=0;renderChatList();}
-            return;
-          }
-          const msgs=snap2.val()||{};
-          let count=0;
-          Object.values(msgs).forEach(m=>{
-            if(m.from!==ME&&!m.deleted&&!m.system&&!(m.readBy&&m.readBy[ME]))count++;
-          });
-          const prev=UNREAD_CACHE[cid]||0;
-          UNREAD_CACHE[cid]=count;
-          if(prev!==count)renderChatList();
-        });
+        subscribeUnread(cid);
       }
     });
   });
@@ -1244,13 +1231,14 @@ function subscribeMessages(chatId){
       UNREAD_CACHE[chatId]=0;
       MESSAGES=nm;
       if(isFirstLoad){
-        // First load: full render
-        renderAllMessages();
-        setTimeout(()=>{
-          const firstUnread=document.querySelector('.mw[data-unread="1"]');
-          if(firstUnread)firstUnread.scrollIntoView({block:'center'});
-          else scrollMsgs();
-        },100);
+        // First load: async batched render, scroll when done
+        renderAllMessages(()=>{
+          requestAnimationFrame(()=>{
+            const firstUnread=document.querySelector('.mw[data-unread="1"]');
+            if(firstUnread){firstUnread.scrollIntoView({block:'center'});}
+            else{body.scrollTop=body.scrollHeight+9999;}
+          });
+        });
       }else{
         // Incremental update
         renderMessages();
@@ -1279,6 +1267,34 @@ function subscribeMessages(chatId){
 // ── UNREAD ─────────────────────────────────────────────────────────
 // Per-chat unread counts (fetched from Firebase and cached)
 const UNREAD_CACHE={};
+
+function countUnread(msgs){
+  let n=0;
+  Object.values(msgs).forEach(m=>{
+    if(m.from!==ME&&!m.deleted&&!m.system&&!(m.readBy&&m.readBy[ME]))n++;
+  });
+  return n;
+}
+
+function subscribeUnread(cid){
+  if(perChatUnsubs[cid])return;
+  // Use get() for initial fast load, then onValue for updates
+  get(ref(db,'messages/'+cid)).then(s=>{
+    if(cid===curChatId){UNREAD_CACHE[cid]=0;return;}
+    const c=countUnread(s.val()||{});
+    if(UNREAD_CACHE[cid]!==c){UNREAD_CACHE[cid]=c;renderChatList();}
+  }).catch(()=>{});
+  // Real-time subscription
+  perChatUnsubs[cid]=onValue(ref(db,'messages/'+cid),snap=>{
+    if(cid===curChatId){
+      if(UNREAD_CACHE[cid]){UNREAD_CACHE[cid]=0;renderChatList();}
+      return;
+    }
+    const c=countUnread(snap.val()||{});
+    if(UNREAD_CACHE[cid]!==c){UNREAD_CACHE[cid]=c;renderChatList();}
+  });
+}
+
 function getUnread(chatId){
   if(curChatId===chatId)return 0;
   return UNREAD_CACHE[chatId]||0;
@@ -1508,24 +1524,35 @@ function loadMsgMedia(msg){
   }
 }
 
-function renderAllMessages(){
+function renderAllMessages(onDone){
   const body=document.getElementById('msgs-body');
   const chat=ALL_CHATS[curChatId];
   const msgs=Object.values(MESSAGES).sort((a,b)=>a.ts-b.ts);
   body.innerHTML='';
-  if(!msgs.length){body.innerHTML=`<div class="empty" style="background:transparent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><h3>Начните общение</h3><p>Напишите первое сообщение!</p></div>`;return;}
+  if(!msgs.length){
+    body.innerHTML=`<div class="empty" style="background:transparent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><h3>Начните общение</h3><p>Напишите первое сообщение!</p></div>`;
+    if(onDone)onDone();return;
+  }
   const msgsMap={};msgs.forEach(m=>{msgsMap[m.id]=m;});
-  let lastDate='';
-  msgs.forEach(msg=>{
-    const d=fmtDate(msg.ts);
-    if(d!==lastDate){const dd=document.createElement('div');dd.className='ddiv';dd.textContent=d;body.appendChild(dd);lastDate=d;}
-    const isOut=msg.from===ME,isGrp=chat?.type==='group',sender=ALL_USERS[msg.from],isDel=msg.deleted;
-    const el=document.createElement('div');
-    el.innerHTML=buildMsgHtml(msg,isOut,isGrp,sender,isDel,msgsMap);
-    const mw=el.firstChild;
-    if(mw)body.appendChild(mw);
-    loadMsgMedia(msg);
-  });
+  // Batch render: add 20 at a time via requestAnimationFrame to avoid blocking UI
+  const BATCH=30;let i=0;let lastDate='';
+  function renderBatch(){
+    const end=Math.min(i+BATCH,msgs.length);
+    for(;i<end;i++){
+      const msg=msgs[i];
+      const d=fmtDate(msg.ts);
+      if(d!==lastDate){const dd=document.createElement('div');dd.className='ddiv';dd.textContent=d;body.appendChild(dd);lastDate=d;}
+      const isOut=msg.from===ME,isGrp=chat?.type==='group',sender=ALL_USERS[msg.from],isDel=msg.deleted;
+      const el=document.createElement('div');
+      el.innerHTML=buildMsgHtml(msg,isOut,isGrp,sender,isDel,msgsMap);
+      const mw=el.firstChild;
+      if(mw)body.appendChild(mw);
+      loadMsgMedia(msg);
+    }
+    if(i<msgs.length){requestAnimationFrame(renderBatch);}
+    else{if(onDone)onDone();}
+  }
+  renderBatch();
 }
 
 function scrollMsgs(){const b=document.getElementById('msgs-body');requestAnimationFrame(()=>{b.scrollTop=b.scrollHeight+9999;});}
@@ -1788,16 +1815,21 @@ window.openUserProfile=function(un){
       const card=document.createElement('div');
       card.className='gift-bubble';
       if(cat&&cat.svg){
-        // Use img with data URI — guaranteed to render SVG with gradients
-        const svgB64=btoa(unescape(encodeURIComponent(cat.svg)));
-        const imgEl=document.createElement('img');
-        imgEl.src='data:image/svg+xml;base64,'+svgB64;
-        imgEl.width=54;imgEl.height=54;
-        imgEl.style.cssText=anim+';display:block';
-        card.appendChild(imgEl);
+        const wrap=document.createElement('div');
+        wrap.className='gift-bubble-icon';
+        // Static by default, animate on hover/click
+        wrap.innerHTML=cat.svg;
+        const svgEl=wrap.querySelector('svg');
+        if(svgEl){svgEl.style.width='54px';svgEl.style.height='54px';}
+        // Animate on click
+        wrap.addEventListener('click',function(){
+          this.style.cssText=anim;
+          setTimeout(()=>{this.style.cssText='';},3000);
+        });
+        card.appendChild(wrap);
       }
       const nameEl=document.createElement('div');
-      nameEl.style.cssText='font-size:12px;font-weight:700;color:var(--text)';
+      nameEl.style.cssText='font-size:12px;font-weight:700;color:var(--text);margin-top:4px';
       nameEl.textContent=g.name;
       const fromEl=document.createElement('div');
       fromEl.style.cssText='font-size:10px;color:var(--t2)';
@@ -2296,14 +2328,13 @@ window.openGifts=function(targetUser){
     item.className='gift-item';item.id='gitem_'+g.id;
     item.onclick=()=>selectGift(g.id);
     const visWrap=document.createElement('div');
-    visWrap.className='gift-visual';visWrap.style.cssText=anim;
+    visWrap.className='gift-visual';
+    // Always animate in gift selection screen
+    visWrap.style.cssText=anim;
     if(g.svg){
-      const svgB64=btoa(unescape(encodeURIComponent(g.svg)));
-      const imgEl=document.createElement('img');
-      imgEl.src='data:image/svg+xml;base64,'+svgB64;
-      imgEl.width=68;imgEl.height=68;
-      imgEl.style.cssText='display:block;width:68px;height:68px';
-      visWrap.appendChild(imgEl);
+      visWrap.innerHTML=g.svg;
+      const svgEl=visWrap.querySelector('svg');
+      if(svgEl){svgEl.style.width='68px';svgEl.style.height='68px';}
     }
     const nm=document.createElement('div');nm.className='gift-name';nm.textContent=g.name;
     const pr=document.createElement('div');pr.className='gift-price';pr.textContent=g.price+' 🪙';
@@ -2326,11 +2357,9 @@ window.selectGift=function(id){
   const swrap=document.createElement('div');
   swrap.style.cssText='width:42px;height:42px;'+selAnim+';filter:drop-shadow(0 3px 10px rgba(0,0,0,.3))';
   if(g.svg){
-    const svgB64sel=btoa(unescape(encodeURIComponent(g.svg)));
-    const imgSel=document.createElement('img');
-    imgSel.src='data:image/svg+xml;base64,'+svgB64sel;
-    imgSel.style.cssText='width:42px;height:42px;display:block';
-    swrap.appendChild(imgSel);
+    swrap.innerHTML=g.svg;
+    const svgEl=swrap.querySelector('svg');
+    if(svgEl){svgEl.style.width='42px';svgEl.style.height='42px';}
   }
   selIco.appendChild(swrap);
   document.getElementById('gift-sel-name').textContent=g.name;
@@ -2375,8 +2404,13 @@ function showGiftNotification(n, cat){
   banner.id='gift-notif-banner';
   let miniSvg='<span style="font-size:28px">🎁</span>';
   if(cat&&cat.svg){
-    const svgB64n=btoa(unescape(encodeURIComponent(cat.svg)));
-    miniSvg=`<img src="data:image/svg+xml;base64,${svgB64n}" style="width:38px;height:38px;animation:giftFloat 2s ease-in-out infinite;filter:drop-shadow(0 2px 8px rgba(0,0,0,.28))">`;
+    // Wrap SVG in div for animation
+    const tmpDiv=document.createElement('div');
+    tmpDiv.style.cssText='width:38px;height:38px;flex-shrink:0;animation:giftFloat 2s ease-in-out infinite;filter:drop-shadow(0 2px 8px rgba(0,0,0,.28))';
+    tmpDiv.innerHTML=cat.svg;
+    const svgN=tmpDiv.querySelector('svg');
+    if(svgN){svgN.style.width='38px';svgN.style.height='38px';}
+    miniSvg=tmpDiv.outerHTML;
   }
   banner.innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;flex:1">
