@@ -175,33 +175,30 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
 .fab svg{width:26px;height:26px}
 
 /* ═══ CHAT SCREEN ════════════════════════════════ */
-/* ── Кастомный скроллбар чата ────────────────── */
-#msgs-body::-webkit-scrollbar{
-  width:6px;
-}
-#msgs-body::-webkit-scrollbar-track{
-  background:transparent;
-  margin:8px 0;
-}
-#msgs-body::-webkit-scrollbar-thumb{
-  background:rgba(128,128,128,.35);
+/* Скрыть нативный скроллбар — используем свой */
+#msgs-body::-webkit-scrollbar{display:none}
+#msgs-body{scrollbar-width:none;-ms-overflow-style:none}
+
+/* ── Кастомный JS скроллбар ─────────────────── */
+.chat-scrollbar{
+  position:absolute;right:3px;top:0;bottom:0;
+  width:5px;z-index:100;pointer-events:none;
+  opacity:0;transition:opacity .25s}
+.chat-scrollbar.visible{opacity:1}
+.chat-scrollbar-thumb{
+  position:absolute;right:0;
+  width:5px;min-height:36px;
+  background:rgba(150,160,180,.45);
   border-radius:10px;
-  transition:background .2s,width .2s;
-  cursor:grab;
-}
-#msgs-body::-webkit-scrollbar-thumb:hover{
+  transition:width .2s,background .2s,transform .15s,box-shadow .15s;
+  cursor:grab;pointer-events:all;touch-action:none}
+.chat-scrollbar-thumb.grabbing{
+  width:8px;
   background:var(--accent);
-  width:10px;
-}
-#msgs-body::-webkit-scrollbar-thumb:active{
-  background:var(--accent);
-  cursor:grabbing;
-}
-/* Firefox */
-#msgs-body{
-  scrollbar-width:thin;
-  scrollbar-color:rgba(128,128,128,.35) transparent;
-}
+  border-radius:10px;
+  transform:translateX(-1px);
+  box-shadow:0 0 10px color-mix(in srgb,var(--accent) 50%,transparent);
+  cursor:grabbing}
 
 #s-chat .body{flex:1;overflow-y:auto;padding:10px 8px 8px;
   display:flex;flex-direction:column;gap:3px;overscroll-behavior:contain;
@@ -871,7 +868,12 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 100px var(--bg) inset!important;
       <button class="msgsearch-nav-btn" onclick="nextMsgResult()">↓</button>
     </div>
   </div>
-  <div class="body chat-bg-default" id="msgs-body"></div>
+  <div style="position:relative;flex:1;overflow:hidden;display:flex;flex-direction:column">
+    <div class="body chat-bg-default" id="msgs-body"></div>
+    <div class="chat-scrollbar" id="chat-scrollbar">
+      <div class="chat-scrollbar-thumb" id="chat-scrollbar-thumb"></div>
+    </div>
+  </div>
   <div class="tbar" id="tbar"><div class="tdots"><span></span><span></span><span></span></div><span class="ttxt" id="ttxt"></span></div>
   <div class="bar" id="reply-bar">
     <div class="barline"></div>
@@ -1430,33 +1432,86 @@ function enterApp(){
   subscribeGlobal();heartbeat();initEmojiPanel();buildWpGrid();applySettings();loadCoins();updateCoinsDisplay();
   ensureBotChat();
   initPush();
-  // Scrollbar grab effect
+  // Custom scrollbar logic
   (function(){
-    const style=document.createElement('style');
-    style.id='sb-grab-style';
-    document.head.appendChild(style);
-    let grabbing=false;
-    document.addEventListener('pointerdown',e=>{
-      const body=document.getElementById('msgs-body');
-      if(!body)return;
-      const r=body.getBoundingClientRect();
-      // Hit test: right edge zone (scrollbar area ~20px from right)
-      if(e.clientX>r.right-22&&e.clientX<r.right+4&&e.clientY>r.top&&e.clientY<r.bottom){
-        grabbing=true;
-        style.textContent=`
-          #msgs-body::-webkit-scrollbar{width:10px!important}
-          #msgs-body::-webkit-scrollbar-thumb{
-            background:var(--accent)!important;
-            border-radius:10px!important;
-            box-shadow:2px 0 12px color-mix(in srgb,var(--accent) 50%,transparent)!important;
-            transform:translateX(-2px);
-          }
-        `;
+    let hideTimer=null;
+    let isDragging=false;
+    let dragStartY=0;
+    let dragStartScroll=0;
+
+    function getEls(){
+      return{
+        body: document.getElementById('msgs-body'),
+        bar:  document.getElementById('chat-scrollbar'),
+        thumb:document.getElementById('chat-scrollbar-thumb')
+      };
+    }
+
+    window.updateScrollbar=function(){
+      const{body,bar,thumb}=getEls();
+      if(!body||!bar||!thumb)return;
+      const sh=body.scrollHeight, ch=body.clientHeight;
+      if(sh<=ch){bar.classList.remove('visible');return;}
+      // Thumb height = visible ratio
+      const ratio=ch/sh;
+      const thumbH=Math.max(36,ch*ratio);
+      const thumbTop=(body.scrollTop/(sh-ch))*(ch-thumbH);
+      thumb.style.height=thumbH+'px';
+      thumb.style.top=thumbTop+'px';
+      // Show bar
+      bar.classList.add('visible');
+      clearTimeout(hideTimer);
+      if(!isDragging){
+        hideTimer=setTimeout(()=>bar.classList.remove('visible'),1200);
       }
-    },{passive:true});
-    document.addEventListener('pointerup',()=>{
-      if(grabbing){grabbing=false;style.textContent='';}
-    },{passive:true});
+    };
+
+    // Pointer events on thumb — drag to scroll
+    function onThumbDown(e){
+      e.preventDefault();e.stopPropagation();
+      const{body,thumb}=getEls();
+      if(!body)return;
+      isDragging=true;
+      dragStartY=e.clientY;
+      dragStartScroll=body.scrollTop;
+      thumb.classList.add('grabbing');
+      thumb.setPointerCapture(e.pointerId);
+    }
+    function onThumbMove(e){
+      if(!isDragging)return;
+      const{body,bar,thumb}=getEls();
+      if(!body)return;
+      const sh=body.scrollHeight,ch=body.clientHeight;
+      const thumbH=parseFloat(thumb.style.height)||36;
+      const trackH=ch-thumbH;
+      const dy=e.clientY-dragStartY;
+      const scrollRange=sh-ch;
+      body.scrollTop=dragStartScroll+(dy/trackH)*scrollRange;
+      updateScrollbar();
+    }
+    function onThumbUp(e){
+      if(!isDragging)return;
+      isDragging=false;
+      const{bar,thumb}=getEls();
+      if(thumb)thumb.classList.remove('grabbing');
+      hideTimer=setTimeout(()=>bar&&bar.classList.remove('visible'),800);
+    }
+
+    // Attach to thumb
+    function attachThumb(){
+      const{body,thumb}=getEls();
+      if(!body||!thumb)return;
+      thumb.addEventListener('pointerdown',onThumbDown);
+      thumb.addEventListener('pointermove',onThumbMove);
+      thumb.addEventListener('pointerup',onThumbUp);
+      thumb.addEventListener('pointercancel',onThumbUp);
+      // Show on body scroll
+      body.addEventListener('scroll',updateScrollbar,{passive:true});
+    }
+
+    // Re-attach when chat opens (body may scroll differently)
+    window._attachScrollbar=attachThumb;
+    attachThumb();
   })();
   // Apply accent/font from user profile once users load
   setTimeout(async()=>{
@@ -1621,13 +1676,15 @@ function subscribeMessages(chatId){
       if(isFirstLoad){
         // First load: async batched render, scroll when done
         renderAllMessages(()=>{
-          // onDone — все сообщения уже в DOM
+          // onDone — все сообщения точно в DOM
           const firstUnread=document.querySelector('.mw[data-unread="1"]');
           if(firstUnread){
             firstUnread.scrollIntoView({block:'center'});
           }else{
-            body.scrollTop=9999999;
+            body.scrollTop=body.scrollHeight;
           }
+          // Update custom scrollbar
+          updateScrollbar();
         });
       }else{
         // Incremental update
@@ -1757,18 +1814,13 @@ window.openChat=function(chatId){
   // Cancel per-chat unread subscription — subscribeMessages handles active chat
   if(perChatUnsubs[chatId]){try{perChatUnsubs[chatId]();}catch{}delete perChatUnsubs[chatId];}
   markChatRead(chatId);
-  updateChatHeader();subscribeMessages(chatId);applyWallpaper();// Restore draft
+  updateChatHeader();subscribeMessages(chatId);applyWallpaper();setTimeout(()=>{if(window._attachScrollbar)_attachScrollbar();updateScrollbar&&updateScrollbar();},100);// Restore draft
   setTimeout(()=>{
     const inp=document.getElementById('msg-inp');
     if(inp){inp.value=DRAFTS[chatId]||'';autoResize(inp);}
   },80);
   showScreen('s-chat');
-  setTimeout(()=>{
-    // Scroll to first unread message, or bottom if none
-    const firstUnread=document.querySelector('.mw[data-unread="1"]');
-    if(firstUnread)firstUnread.scrollIntoView({block:'center'});
-    else scrollMsgs();
-  },160);
+  // Scroll handled in renderAllMessages onDone callback
 };
 async function markChatRead(chatId){
   try{
