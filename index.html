@@ -1995,7 +1995,7 @@ function buildMsgHtml(msg,isOut,isGrp,sender,isDel,msgsMap){
     const btn=g.winner||g.draw?`<button class="ttt-btn" onclick="tttNewGame('${msg.id}');event.stopPropagation()">🔄 Новая игра</button>`:'';
     mediaHtml=`<div class="ttt-wrap"><div class="ttt-title">Крестики-Нолики</div><div class="ttt-board">${cells}</div><div class="ttt-status">${st}</div>${btn}</div>`;
   }
-  if(msg.image&&!isDel){mediaHtml=`<div class="mimg-wrap" onclick="viewImg('${msg.image.slice(0,30)}');event.stopPropagation()"><img class="mimg" src="${msg.image}" alt=""></div>`;}
+  if(msg.image&&!isDel){mediaHtml=`<div class="mimg-wrap" onclick="viewImg(this.querySelector('img').src);event.stopPropagation()"><img class="mimg" src="${msg.image}" alt=""></div>`;}
   // Video
   if((msg.video||msg.videoRef)&&!isDel){
     const vid_id='vid_'+msg.id;
@@ -2354,7 +2354,7 @@ window.openUserProfile=function(un){
   if(u.online&&u.lastSeen&&Date.now()-u.lastSeen<35000){st.textContent='● В сети';st.className='prof-status on';}else{st.textContent='Был(а) '+fmtLastSeen(u.lastSeen);st.className='prof-status off';}
   const bioSec=document.getElementById('prof-bio-sec');
   if(u.bio){document.getElementById('prof-bio').textContent=u.bio;bioSec.style.display='block';}else bioSec.style.display='none';
-  const profActionsHtml=un!==ME?`<button class="btn pr" style="flex:1" onclick="startDMWith('${un}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Написать</button><button class="btn gh" style="flex:1" onclick="openGifts('${un}')">🎁 Подарить</button>`:'<button class="btn gh" style="flex:1;pointer-events:none" onclick="openTasks()">🪙 Мои задания</button>';
+  const profActionsHtml=un!==ME?`<button class="btn pr" style="flex:1" onclick="startDMWith('${un}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Написать</button><button class="btn gh" style="flex:1" onclick="openGifts('${un}')">🎁 Подарить</button>`:`<button class="btn gh" style="flex:1" onclick="openTasks()">🪙 Мои задания</button><button class="btn pr" style="flex:1" onclick="showMyGifts()">🎁 Мои подарки</button>`;
   document.getElementById('prof-actions').innerHTML=profActionsHtml;
   // Load and show gifts — use token to cancel stale async results
   const _giftToken=un; // unique per user
@@ -2546,6 +2546,41 @@ window.insertEmoji=function(em){const inp=document.getElementById('msg-inp');con
 
 // ── IMAGE VIEWER ───────────────────────────────────────────────────
 window.viewImg=function(url){document.getElementById('imgview-img').src=url;document.getElementById('imgview').classList.add('on');};
+// ── MY GIFTS MODAL ─────────────────────────────────────────────
+window.showMyGifts=function(){
+  loadUserGifts(ME).then(gifts=>{
+    const body=document.getElementById('my-gifts-body');
+    if(!body)return;
+    if(!gifts||!gifts.length){
+      body.innerHTML='<div style="text-align:center;padding:32px;color:var(--t3);font-size:14px">У тебя пока нет подарков 🎁<br><span style="font-size:12px;margin-top:6px;display:block">Попроси друзей подарить!</span></div>';
+    }else{
+      body.innerHTML='';
+      gifts.forEach(g=>{
+        const cat=GIFT_CATALOG.find(x=>x.id===g.giftId)||{emoji:'🎁',name:g.giftId,bg:'#222',color:'#fff'};
+        const anim=GIFT_ANIMS[g.giftId]||'animation:giftFloat 2s ease-in-out infinite';
+        const row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)';
+        const iconWrap=document.createElement('div');
+        iconWrap.style.cssText=`width:48px;height:48px;border-radius:12px;background:${cat.bg};display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;box-shadow:0 0 12px ${cat.color}44`;
+        const sp=document.createElement('span');
+        sp.style.cssText=`display:inline-block;${anim}`;
+        sp.textContent=cat.emoji;
+        iconWrap.appendChild(sp);
+        const info=document.createElement('div');
+        info.style.cssText='flex:1;min-width:0';
+        info.innerHTML=`<div style="font-size:14px;font-weight:700;color:var(--text)">${esc(cat.name)}</div>`+
+          `<div style="font-size:12px;color:var(--t3);margin-top:2px">От: ${esc(ALL_USERS[g.from]?.name||g.from)} · ${fmtTime(g.ts)}</div>`;
+        const price=document.createElement('div');
+        price.style.cssText='font-size:13px;font-weight:800;color:var(--accent);flex-shrink:0';
+        price.textContent=cat.price+'🪙';
+        row.appendChild(iconWrap);row.appendChild(info);row.appendChild(price);
+        body.appendChild(row);
+      });
+    }
+    openModal('m-my-gifts');
+  });
+};
+
 // ── DOWNLOAD HELPERS ─────────────────────────────────────────────────
 async function resolveMediaSrc(msg,type){
   // type: 'audio','video'
