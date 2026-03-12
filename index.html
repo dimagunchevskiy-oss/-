@@ -228,7 +228,7 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
 .mw.out .mb{background:var(--out);border-bottom-right-radius:4px;border-top-right-radius:18px}
 .mw.in .mb{background:var(--in);border-bottom-left-radius:4px;border-bottom-left-radius:4px}
 .mtext{font-size:14.5px;line-height:1.55;color:var(--text);user-select:text;white-space:pre-wrap}
-.mw{position:relative;transition:transform .15s ease;overflow:visible}
+.mw{position:relative;transition:transform .15s ease}
 .swipe-icon{
   position:absolute;top:50%;
   width:30px;height:30px;border-radius:50%;
@@ -603,7 +603,7 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
 .prof-status{font-size:13px;margin-top:4px;font-weight:600}
 .prof-status.on{color:#a5f3c7}
 .prof-status.off{color:rgba(255,255,255,.58)}
-.prof-actions{display:flex;padding:12px;gap:8px}
+.prof-actions{display:flex;padding:10px 12px;gap:8px;overflow:hidden}
 .prof-bio-sec{padding:4px 16px 14px}
 .prof-bio-title{font-size:11px;font-weight:800;color:var(--blue);text-transform:uppercase;
   letter-spacing:.6px;margin-bottom:5px}
@@ -1716,9 +1716,7 @@ function subscribeMessages(chatId){
       if(isFirstLoad){
         // First load: async batched render, scroll when done
         renderAllMessages(()=>{
-          // Всегда скроллим вниз — пользователь сам поднимется если нужно
-          body.scrollTop=9999999;
-          // Update custom scrollbar
+          body.scrollTop=body.scrollHeight;
           updateScrollbar();
         });
       }else{
@@ -2465,7 +2463,7 @@ window.openUserProfile=function(un){
   if(u.online&&u.lastSeen&&Date.now()-u.lastSeen<35000){st.textContent='● В сети';st.className='prof-status on';}else{st.textContent='Был(а) '+fmtLastSeen(u.lastSeen);st.className='prof-status off';}
   const bioSec=document.getElementById('prof-bio-sec');
   if(u.bio){document.getElementById('prof-bio').textContent=u.bio;bioSec.style.display='block';}else bioSec.style.display='none';
-  const profActionsHtml=un!==ME?`<button class="btn pr" style="flex:1" onclick="startDMWith('${un}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Написать</button><button class="btn gh" style="flex:1" onclick="openGifts('${un}')">🎁 Подарить</button></div><div style="display:flex;gap:8px;padding:0 12px 12px"><button class="btn pr" style="flex:1;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#000;border:none;font-weight:800" onclick="transferCoins('${un}')">💸 Перевести монеты</button>`:`<button class="btn gh" style="flex:1" onclick="openTasks()">🪙 Мои задания</button><button class="btn pr" style="flex:1" onclick="showMyGifts()">🎁 Мои подарки</button>`;
+  const profActionsHtml=un!==ME?`<button class="btn pr" style="flex:1;min-width:0" onclick="startDMWith('${un}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Написать</button><button class="btn gh" style="flex:1;min-width:0" onclick="openGifts('${un}')">🎁 Подарить</button><button class="btn" style="flex:1;min-width:0;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#000;border:none;font-weight:700;border-radius:12px;padding:10px 8px;font-size:13px;cursor:pointer" onclick="transferCoins('${un}')">💸 Монеты</button>`:`<button class="btn gh" style="flex:1" onclick="openTasks()">🪙 Мои задания</button><button class="btn pr" style="flex:1" onclick="showMyGifts()">🎁 Мои подарки</button>`;
   document.getElementById('prof-actions').innerHTML=profActionsHtml;
   // Load and show gifts — use token to cancel stale async results
   const _giftToken=un; // unique per user
