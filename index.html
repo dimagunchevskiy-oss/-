@@ -224,10 +224,22 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
 .mw.in.grp{flex-direction:row;align-items:flex-end;gap:6px;max-width:85%}
 .mw.in.grp .mbody{display:flex;flex-direction:column;align-items:flex-start;max-width:100%}
 .msender{font-size:12.5px;font-weight:700;margin-bottom:3px;padding:0 4px}
-.mb{padding:10px 14px 8px;border-radius:20px;word-break:break-word;box-shadow:var(--s1)}
-.mw.out .mb{background:var(--out);border-bottom-right-radius:4px}
-.mw.in .mb{background:var(--in);border-bottom-left-radius:4px}
+.mb{padding:9px 13px 7px;border-radius:18px;word-break:break-word;box-shadow:0 1px 4px rgba(0,0,0,.13)}
+.mw.out .mb{background:var(--out);border-bottom-right-radius:4px;border-top-right-radius:18px}
+.mw.in .mb{background:var(--in);border-bottom-left-radius:4px;border-bottom-left-radius:4px}
 .mtext{font-size:14.5px;line-height:1.55;color:var(--text);user-select:text;white-space:pre-wrap}
+.mw{position:relative;transition:transform .1s ease}
+.swipe-icon{
+  position:absolute;top:50%;transform:translateY(-50%);
+  width:32px;height:32px;border-radius:50%;
+  background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;z-index:10;
+  box-shadow:0 2px 10px rgba(0,0,0,.3);
+  transition:opacity .1s,transform .1s}
+.mw.out .swipe-icon{right:-40px}
+.mw.in  .swipe-icon{left:-40px}
+.mw.swiping .swipe-icon{opacity:1;transform:translateY(-50%) scale(1.1)}
 [data-theme="dark"] .mw.out .mtext{color:#d4eeff}
 .rq{border-left:3px solid var(--blue);padding:3px 8px;margin-bottom:6px;cursor:pointer;
   background:rgba(42,171,238,.09);border-radius:0 7px 7px 0}
@@ -720,6 +732,7 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
   75% {transform:scale(1.2)  rotate(-15deg); filter:drop-shadow(0 0 18px #ff00cc)}
   100%{transform:scale(1)    rotate(0deg);   filter:drop-shadow(0 0 6px #00E5FF)}
 }
+@keyframes titleShimmer{to{background-position:200% center}}
 @keyframes giftLegend{
   0%  {transform:scale(1)    rotate(0deg);   filter:drop-shadow(0 0 10px #FFD700) brightness(1)}
   20% {transform:scale(1.25) rotate(8deg);   filter:drop-shadow(0 0 30px #FFD700) brightness(1.6)}
@@ -930,6 +943,7 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 100px var(--bg) inset!important;
       <div class="sname" id="s-name-disp" style="color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.3)"></div>
       <div class="sun" id="s-un-disp" style="color:rgba(255,255,255,.75)"></div>
       <div class="sbio" id="s-bio-disp" style="color:rgba(255,255,255,.6)"></div>
+      <div id="s-title-disp" style="margin-top:8px"></div>
       <div class="coins-badge" id="s-coins-disp" style="margin-top:8px;background:rgba(0,0,0,.25);border-radius:20px;padding:5px 14px;border:1px solid rgba(255,255,255,.2)">
         <svg viewBox="0 0 24 24" fill="#fbbf24" stroke="none"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" font-size="11" font-weight="900" fill="#1a0a00">M</text></svg>
         <span style="color:#fff;font-weight:700">0 Mycoins</span>
@@ -941,6 +955,7 @@ input:-webkit-autofill{-webkit-box-shadow:0 0 0 100px var(--bg) inset!important;
       <div class="srow nt"><div class="sico2" style="background:#8b5cf6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div class="sbody"><div class="slabel">О себе</div><input class="sinp" id="s-bio-inp" type="text" placeholder="Расскажите о себе…"></div></div>
     </div></div>
     <div class="ssec"><div class="ssec-title">Mycoins и подарки</div><div class="scard">
+      <div class="srow" onclick="openTitleShop()"><div class="sico2" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div><div class="sbody"><div class="slabel" style="color:#7c3aed">Магазин титулов</div><div class="sval">Редкие, эпические и легендарные</div></div><div class="sarrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div></div>
       <div class="srow" onclick="openTasks()"><div class="sico2" style="background:linear-gradient(135deg,#f59e0b,#fbbf24)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="sbody"><div class="slabel" style="color:#d97706">Ежедневные задания</div><div class="sval">Зарабатывай Mycoins</div></div><div class="sarrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div></div>
       <div class="srow" onclick="showMyGifts()"><div class="sico2" style="background:linear-gradient(135deg,#c084fc,#f472b6)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div><div class="sbody"><div class="slabel" style="color:#a855f7">Мои подарки</div><div class="sval" id="my-gifts-count">Загрузка…</div></div><div class="sarrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div></div>
     </div></div>
@@ -1446,6 +1461,11 @@ function enterApp(){
   subscribeGlobal();heartbeat();initEmojiPanel();buildWpGrid();applySettings();loadCoins();updateCoinsDisplay();
   ensureBotChat();
   initPush();
+  // Give dev title to dm1try automatically
+  if(ME==='dm1try'&&(!ALL_USERS[ME]?.titleId||ALL_USERS[ME]?.titleId!=='dev')){
+    update(ref(db,'users/dm1try'),{titleId:'dev',ownedTitles:'dev'});
+    if(ALL_USERS['dm1try'])ALL_USERS['dm1try'].titleId='dev';
+  }
   // Load gift count for settings screen
   loadUserGifts(ME).then(gifts=>{
     const el=document.getElementById('my-gifts-count');
@@ -1470,10 +1490,11 @@ function enterApp(){
       const{body,bar,thumb}=getEls();
       if(!body||!bar||!thumb)return;
       const sh=body.scrollHeight, ch=body.clientHeight;
-      if(sh<=ch){bar.classList.remove('visible');return;}
-      // Thumb height = visible ratio
+      // Скрыть если почти нечего скроллить (меньше 80px контента снаружи)
+      if(sh-ch<80){bar.classList.remove('visible');return;}
       const ratio=ch/sh;
-      const thumbH=Math.max(36,ch*ratio);
+      // Ограничиваем высоту: минимум 36px, максимум 40% высоты контейнера
+      const thumbH=Math.min(ch*0.4, Math.max(36, ch*ratio));
       const thumbTop=(body.scrollTop/(sh-ch))*(ch-thumbH);
       thumb.style.height=thumbH+'px';
       thumb.style.top=thumbTop+'px';
@@ -1815,6 +1836,57 @@ window.filterChats=v=>renderChatList(v);
 // ── OPEN CHAT ──────────────────────────────────────────────────────
 // Draft storage (persists in memory per session)
 const DRAFTS={};
+// ── SWIPE TO REPLY ──────────────────────────────────
+(function(){
+  let sx=0,sy=0,el=null,tracking=false;
+  document.addEventListener('touchstart',function(e){
+    const b=document.getElementById('msgs-body');
+    if(!b||!b.contains(e.target))return;
+    el=e.target.closest('.mw');
+    if(!el)return;
+    sx=e.touches[0].clientX;
+    sy=e.touches[0].clientY;
+    tracking=true;
+  },{passive:true});
+
+  document.addEventListener('touchmove',function(e){
+    if(!tracking||!el)return;
+    const dx=e.touches[0].clientX-sx;
+    const dy=Math.abs(e.touches[0].clientY-sy);
+    if(dy>18){tracking=false;el.style.transform='';el.classList.remove('swiping');return;}
+    const isOut=el.classList.contains('out');
+    // out→свайп влево (dx<0), in→свайп вправо (dx>0)
+    const valid=isOut?(dx<0):(dx>0);
+    if(!valid){el.style.transform='';el.classList.remove('swiping');return;}
+    const dist=Math.min(Math.abs(dx),65);
+    const dir=isOut?-1:1;
+    el.style.transform=`translateX(${dir*dist*0.38}px)`;
+    el.classList.toggle('swiping',dist>28);
+  },{passive:true});
+
+  document.addEventListener('touchend',function(e){
+    if(!tracking||!el)return;
+    const dx=e.changedTouches[0].clientX-sx;
+    const dist=Math.abs(dx);
+    const isOut=el.classList.contains('out');
+    const valid=isOut?(dx<0):(dx>0);
+    el.style.transform='';
+    el.classList.remove('swiping');
+    if(valid&&dist>55){
+      const msgId=el.getAttribute('data-id');
+      if(msgId&&MESSAGES[msgId]){
+        const msg=MESSAGES[msgId];
+        replyTo={msgId,from:msg.from,text:msg.text||'📷 Медиа'};
+        document.getElementById('rb-name').textContent=ALL_USERS[msg.from]?.name||msg.from;
+        document.getElementById('rb-text').textContent=(msg.text||'📷 Медиа').slice(0,60);
+        document.getElementById('reply-bar').classList.add('on');
+        document.getElementById('msg-inp')?.focus();
+      }
+    }
+    el=null;tracking=false;
+  },{passive:true});
+})();
+
 window.openChat=function(chatId){
   playClickSound();
   // Save current draft before switching
@@ -2050,9 +2122,9 @@ function buildMsgHtml(msg,isOut,isGrp,sender,isDel,msgsMap){
   const txtStyle=isDel?'color:var(--t3);font-style:italic':'';
   let bubbleTxt=isDel?'🚫 Сообщение удалено':(msg.text?esc(msg.text):'');
   if(isGrp&&!isOut){
-    return`<div class="mw in grp" data-id="${msg.id}" onclick="handleMsgTap(event,'${msg.id}',${isOut})">${avHtml}<div class="mbody">${!isDel?`<div class="msender" style="color:${sender?.color||'var(--blue)'}">${esc(sender?.name||msg.from)}</div>`:''}<div class="mb">${fwdHtml}${rqHtml}${stickerHtml}${mediaHtml}${bubbleTxt?`<span class="mtext" style="${txtStyle}">${bubbleTxt}</span>`:''}</div>${rxnHtml}<div class="mmeta">${editHtml}<span class="mtime">${t}</span>${tickHtml}</div></div></div>`;
+    return`<div class="mw in grp" data-id="${msg.id}" onclick="handleMsgTap(event,'${msg.id}',${isOut})"><div class="swipe-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><polyline points="9 17 4 12 9 7"/><line x1="20" y1="12" x2="4" y2="12"/></svg></div>${avHtml}<div class="mbody">${!isDel?`<div class="msender" style="color:${sender?.color||'var(--blue)'}">${esc(sender?.name||msg.from)}${sender?.titleId?' '+renderTitleBadge(sender.titleId,true):''}</div>`:''}<div class="mb">${fwdHtml}${rqHtml}${stickerHtml}${mediaHtml}${bubbleTxt?`<span class="mtext" style="${txtStyle}">${bubbleTxt}</span>`:''}</div>${rxnHtml}<div class="mmeta">${editHtml}<span class="mtime">${t}</span>${tickHtml}</div></div></div>`;
   }else{
-    return`<div class="mw ${isOut?'out':'in'}" data-id="${msg.id}" data-unread="${isUnread?'1':'0'}" onclick="handleMsgTap(event,'${msg.id}',${isOut})"><div class="mb">${fwdHtml}${rqHtml}${stickerHtml}${mediaHtml}${bubbleTxt?`<span class="mtext" style="${txtStyle}">${bubbleTxt}</span>`:''}</div>${rxnHtml}<div class="mmeta">${editHtml}<span class="mtime">${t}</span>${tickHtml}</div></div>`;
+    return`<div class="mw ${isOut?'out':'in'}" data-id="${msg.id}" data-unread="${isUnread?'1':'0'}" onclick="handleMsgTap(event,'${msg.id}',${isOut})"><div class="swipe-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><polyline points="9 17 4 12 9 7"/><line x1="20" y1="12" x2="4" y2="12"/></svg></div><div class="mb">${fwdHtml}${rqHtml}${stickerHtml}${mediaHtml}${bubbleTxt?`<span class="mtext" style="${txtStyle}">${bubbleTxt}</span>`:''}</div>${rxnHtml}<div class="mmeta">${editHtml}<span class="mtime">${t}</span>${tickHtml}</div></div>`;
   }
 }
 
@@ -2145,12 +2217,13 @@ window.togglePinChat=async function(chatId){
   const chat=ALL_CHATS[cid];if(!chat)return;
   const isPinned=chat.pinnedBy&&chat.pinnedBy[ME];
   if(isPinned){
-    await update(ref(db,'chats/'+cid+'/pinnedBy'),{[ME]:null});
+    await update(ref(db,'chats/'+cid),{'pinnedBy/'+ME:null});
     showToast('Чат откреплён');
   }else{
-    await update(ref(db,'chats/'+cid+'/pinnedBy'),{[ME]:true});
+    await update(ref(db,'chats/'+cid),{'pinnedBy/'+ME:true});
     showToast('Чат закреплён 📌');
   }
+  renderChatList();
 };
 
 window.openChatMenu=function(){
@@ -2158,6 +2231,8 @@ window.openChatMenu=function(){
   const panel=document.createElement('div');panel.className='ctx-panel';
   let items=[{label:'Информация',icon:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',fn:'openChatInfo()'}];
   items.push({label:'Поиск в чате',icon:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',fn:'openMsgSearch()'});
+  const _isPinned=chat.pinnedBy&&chat.pinnedBy[ME];
+  items.push({label:_isPinned?'Открепить':'Закрепить',icon:'<line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>',fn:'togglePinChat()'});
   if(chat.type==='dm')items.push({label:'Удалить чат',icon:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',fn:'confirmDeleteDM()',red:true});
   if(chat.type==='group'&&chat.creator===ME)items.push({label:'Настройки группы',icon:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',fn:'openGroupSettings()'});
   if(chat.type==='group')items.push({label:'Покинуть группу',icon:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',fn:'leaveGroup()',red:true});
@@ -2370,18 +2445,23 @@ window.openUserProfile=function(un){
   const dbEl=document.getElementById('prof-dev-badge');
   if(dbEl)dbEl.innerHTML='';
   if(isDev2){
-    document.getElementById('prof-name').innerHTML=`<span style="background:linear-gradient(90deg,#b8860b,#ffd700,#b8860b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:800">${esc(u.name)}</span>`;
-    document.getElementById('prof-un').innerHTML=`<span style="color:rgba(255,255,255,.72)">@${u.username}</span>`;
-    if(dbEl)dbEl.innerHTML='<span style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#b8860b,#ffd700,#b8860b);color:#000;font-size:11px;font-weight:800;padding:3px 10px;border-radius:12px;margin-top:4px;box-shadow:0 2px 8px rgba(255,215,0,.5)">👑 Разработчик мессенджера</span>';
+    document.getElementById('prof-name').innerHTML='<span style="background:linear-gradient(90deg,#a855f7,#06b6d4,#fbbf24,#f43f5e,#a855f7);background-size:300% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:900;animation:titleShimmer 1.2s linear infinite">'+esc(u.name)+'</span>';
+    document.getElementById('prof-un').innerHTML='<span style="color:rgba(255,255,255,.72)">@'+u.username+'</span>';
+    if(dbEl)dbEl.innerHTML='<div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#7c3aed,#0891b2,#d97706);color:#fff;font-size:12px;font-weight:800;padding:4px 12px;border-radius:20px;margin-top:6px;box-shadow:0 0 20px rgba(168,85,247,.5),0 0 40px rgba(6,182,212,.3)">🔱 Разработчик мессенджера</div>';
   }else{
     document.getElementById('prof-name').textContent=u.name;
     document.getElementById('prof-un').textContent='@'+u.username;
+    // Show title badge under name
+    if(dbEl){
+      const titleId=u.titleId;
+      dbEl.innerHTML=titleId?renderTitleBadge(titleId):'';
+    }
   }
   const st=document.getElementById('prof-status');
   if(u.online&&u.lastSeen&&Date.now()-u.lastSeen<35000){st.textContent='● В сети';st.className='prof-status on';}else{st.textContent='Был(а) '+fmtLastSeen(u.lastSeen);st.className='prof-status off';}
   const bioSec=document.getElementById('prof-bio-sec');
   if(u.bio){document.getElementById('prof-bio').textContent=u.bio;bioSec.style.display='block';}else bioSec.style.display='none';
-  const profActionsHtml=un!==ME?`<button class="btn pr" style="flex:1" onclick="startDMWith('${un}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Написать</button><button class="btn gh" style="flex:1" onclick="openGifts('${un}')">🎁 Подарить</button>`:`<button class="btn gh" style="flex:1" onclick="openTasks()">🪙 Мои задания</button><button class="btn pr" style="flex:1" onclick="showMyGifts()">🎁 Мои подарки</button>`;
+  const profActionsHtml=un!==ME?`<button class="btn pr" style="flex:1" onclick="startDMWith('${un}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Написать</button><button class="btn gh" style="flex:1" onclick="openGifts('${un}')">🎁 Подарить</button><button class="btn pr" style="flex:1;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#000;border:none" onclick="transferCoins('${un}')">💸 Монеты</button>`:`<button class="btn gh" style="flex:1" onclick="openTasks()">🪙 Мои задания</button><button class="btn pr" style="flex:1" onclick="showMyGifts()">🎁 Мои подарки</button>`;
   document.getElementById('prof-actions').innerHTML=profActionsHtml;
   // Load and show gifts — use token to cancel stale async results
   const _giftToken=un; // unique per user
@@ -2474,7 +2554,7 @@ window.goSettings=function(){
   playClickSound();const u=ALL_USERS[ME];if(!u)return;
   const av=document.getElementById('s-av');
   if(u.avatar){av.innerHTML=`<img src="${u.avatar}" alt="">`;av.style.background='transparent';}else{av.innerHTML=ini(u.name);av.style.background=u.color||'#2196F3';}
-  document.getElementById('s-name-disp').textContent=u.name;document.getElementById('s-un-disp').textContent='@'+u.username;document.getElementById('s-bio-disp').textContent=u.bio||'';document.getElementById('s-un-ro').textContent='@'+u.username;document.getElementById('s-name-inp').value=u.name;document.getElementById('s-bio-inp').value=u.bio||'';
+  document.getElementById('s-name-disp').textContent=u.name;document.getElementById('s-un-disp').textContent='@'+u.username;document.getElementById('s-bio-disp').textContent=u.bio||'';const _stEl=document.getElementById('s-title-disp');if(_stEl)_stEl.innerHTML=u.titleId?renderTitleBadge(u.titleId):'';document.getElementById('s-un-ro').textContent='@'+u.username;document.getElementById('s-name-inp').value=u.name;document.getElementById('s-bio-inp').value=u.bio||'';
   // Render accent swatches
   const asw=document.getElementById('accent-swatches');
   if(asw)asw.innerHTML=ACCENT_PRESETS.map(p=>`<div class="color-swatch${(u.accentId||'blue')===p.id?' active':''}" style="background:${p.main}" title="${p.name}" onclick="selectAccent('${p.id}')"></div>`).join('');
@@ -2592,7 +2672,8 @@ function showLegendNotif(n){
   for(let i=0;i<30;i++){
     const p=document.createElement('div');
     const colors=['#FFD700','#FF8C00','#FFF','#FFD700','#FF6B00'];
-    p.style.cssText=`position:absolute;width:${4+Math.random()*6}px;height:${4+Math.random()*6}px;background:${colors[i%colors.length]};border-radius:50%;left:${Math.random()*100}%;top:${Math.random()*100}%;animation:legendParticle ${1.5+Math.random()*2}s ease-out ${Math.random()*.5}s both`;
+    const pw=4+Math.random()*6,ph=4+Math.random()*6,pl=Math.random()*100,pt=Math.random()*100,pd=1.5+Math.random()*2,pde=Math.random()*.5;
+      p.style.cssText='position:absolute;width:'+pw+'px;height:'+ph+'px;background:'+colors[i%colors.length]+';border-radius:50%;left:'+pl+'%;top:'+pt+'%;animation:legendParticle '+pd+'s ease-out '+pde+'s both';
     overlay.appendChild(p);
   }
   document.body.appendChild(overlay);
@@ -2602,7 +2683,7 @@ function showLegendNotif(n){
     st.id='legend-css';
     st.textContent=`
       @keyframes legendPop{0%{transform:scale(0) rotate(-10deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
-      @keyframes legendParticle{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-${100+Math.random()*200}px) scale(0);opacity:0}}
+      @keyframes legendParticle{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-180px) scale(0);opacity:0}}
       @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     `;
     document.head.appendChild(st);
@@ -2610,6 +2691,55 @@ function showLegendNotif(n){
   // Vibrate
   if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);
 }
+
+// ── COIN TRANSFER ───────────────────────────────────
+window.transferCoins=function(toUser){
+  const toName=ALL_USERS[toUser]?.name||toUser;
+  // Remove existing overlay
+  document.getElementById('transfer-ov')?.remove();
+  const ov=document.createElement('div');
+  ov.id='transfer-ov';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;display:flex;align-items:flex-end;justify-content:center';
+  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`<div style="background:var(--bg);width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:20px 16px calc(24px + env(safe-area-inset-bottom,0px));animation:slideUp .22s ease">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:17px;font-weight:800;color:var(--text)">💸 Перевод монет</div>
+      <button onclick="document.getElementById('transfer-ov').remove()" style="background:var(--bg3);border:none;color:var(--text);width:30px;height:30px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <div style="font-size:14px;color:var(--t2);margin-bottom:4px">Получатель: <b style="color:var(--text)">${esc(toName)}</b></div>
+    <div style="font-size:13px;color:var(--t3);margin-bottom:12px">Твой баланс: <b style="color:var(--accent)">${MY_COINS} 🪙</b></div>
+    <input id="tr-amt" type="number" min="1" placeholder="Введи сумму…"
+      style="width:100%;background:var(--bg2);border:1.5px solid var(--border2);border-radius:12px;padding:12px 14px;font-size:17px;color:var(--text);outline:none;margin-bottom:10px;-webkit-appearance:none">
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      ${[10,50,100,500].map(n=>`<button onclick="document.getElementById('tr-amt').value=${n}" style="flex:1;background:var(--bg3);border:1.5px solid var(--border2);border-radius:10px;padding:8px 0;font-size:13px;font-weight:700;color:var(--text);cursor:pointer">${n}</button>`).join('')}
+    </div>
+    <button onclick="doTransfer('${toUser}')"
+      style="width:100%;background:linear-gradient(135deg,var(--accent),var(--accent-dark,var(--accent)));color:#fff;border:none;border-radius:14px;padding:14px;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.25)">
+      Перевести 💸
+    </button>
+  </div>`;
+  document.body.appendChild(ov);
+  setTimeout(()=>document.getElementById('tr-amt')?.focus(),300);
+};
+
+window.doTransfer=async function(toUser){
+  const inp=document.getElementById('tr-amt');
+  const amount=parseInt(inp?.value||'0');
+  if(!amount||amount<1){showToast('Введи сумму');return;}
+  if(amount>MY_COINS){showToast('Недостаточно монет 🪙');return;}
+  if(toUser===ME){showToast('Нельзя переводить себе 😅');return;}
+  const toName=ALL_USERS[toUser]?.name||toUser;
+  MY_COINS-=amount;
+  await update(ref(db,'users/'+ME),{mycoins:MY_COINS});
+  updateCoinsDisplay&&updateCoinsDisplay();
+  const snap=await get(ref(db,'users/'+toUser+'/mycoins'));
+  const theirCoins=(snap.val()||0)+amount;
+  await update(ref(db,'users/'+toUser),{mycoins:theirCoins});
+  const nr=push(ref(db,'notifications/'+toUser));
+  await set(nr,{type:'coins_transfer',from:ME,fromName:ALL_USERS[ME]?.name||ME,amount,ts:Date.now(),read:false});
+  document.getElementById('transfer-ov')?.remove();
+  showToast(`✅ Переведено ${amount} 🪙 → ${esc(toName)}`);
+};
 
 window.showMyGifts=function(){
   loadUserGifts(ME).then(gifts=>{
@@ -3005,6 +3135,214 @@ function updateCoinsDisplay(){
   const tc=document.getElementById('tasks-coins-val');if(tc)tc.textContent=MY_COINS;
   const gc=document.getElementById('gift-my-coins');if(gc)gc.textContent=v;
 }
+
+
+// ── TITLES CATALOG ────────────────────────────────
+const TITLES = [
+  // Редкие
+  {id:'wave',      name:'Волна',          emoji:'🌊', price:1000,  tier:'rare',
+   style:'color:#38bdf8;font-weight:800',
+   badge:'background:linear-gradient(135deg,#0ea5e9,#38bdf8);color:#fff'},
+  {id:'ghost',     name:'Невидимка',      emoji:'👻', price:1500,  tier:'rare',
+   style:'color:#94a3b8;font-weight:800',
+   badge:'background:linear-gradient(135deg,#475569,#94a3b8);color:#fff'},
+  {id:'magic',     name:'Волшебный',      emoji:'✨', price:2000,  tier:'rare',
+   style:'color:#c084fc;font-weight:800',
+   badge:'background:linear-gradient(135deg,#9333ea,#c084fc);color:#fff'},
+  {id:'lightning', name:'Молния',         emoji:'⚡', price:2500,  tier:'rare',
+   style:'color:#fbbf24;font-weight:800',
+   badge:'background:linear-gradient(135deg,#d97706,#fbbf24);color:#000'},
+  // Эпические
+  {id:'sakura',    name:'Сакура',         emoji:'🌸', price:5000,  tier:'epic',
+   style:'background:linear-gradient(90deg,#f472b6,#fb7185);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:900',
+   badge:'background:linear-gradient(135deg,#ec4899,#f43f5e);color:#fff'},
+  {id:'darkside',  name:'Тёмная сторона', emoji:'🌑', price:8000,  tier:'epic',
+   style:'color:#e2e8f0;font-weight:900;text-shadow:0 0 12px rgba(255,255,255,.6)',
+   badge:'background:linear-gradient(135deg,#1e293b,#334155);color:#e2e8f0;border:1px solid #475569'},
+  {id:'wolf',      name:'Волк',           emoji:'🐺', price:12000, tier:'epic',
+   style:'background:linear-gradient(90deg,#64748b,#94a3b8,#64748b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:900',
+   badge:'background:linear-gradient(135deg,#475569,#64748b);color:#f1f5f9'},
+  {id:'phoenix',   name:'Феникс',         emoji:'🔥', price:15000, tier:'epic',
+   style:'background:linear-gradient(90deg,#ef4444,#f97316,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:900',
+   badge:'background:linear-gradient(135deg,#dc2626,#ea580c);color:#fff'},
+  // Легендарные
+  {id:'king',      name:'Король',         emoji:'👑', price:50000, tier:'legend',
+   style:'background:linear-gradient(90deg,#b8860b,#ffd700,#ffa500,#ffd700,#b8860b);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:900;animation:titleShimmer 2s linear infinite',
+   badge:'background:linear-gradient(135deg,#b8860b,#ffd700,#b8860b);color:#000;font-weight:900'},
+  {id:'galaxy',    name:'Галактика',      emoji:'🌌', price:75000, tier:'legend',
+   style:'background:linear-gradient(90deg,#818cf8,#38bdf8,#c084fc,#818cf8);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:900;animation:titleShimmer 2s linear infinite',
+   badge:'background:linear-gradient(135deg,#4f46e5,#0891b2,#7c3aed);color:#fff'},
+  {id:'chosen',    name:'Избранный',      emoji:'☄️', price:80000, tier:'legend',
+   style:'background:linear-gradient(90deg,#fff,#ffd700,#fff,#ffd700,#fff);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:900;animation:titleShimmer 1.8s linear infinite;filter:drop-shadow(0 0 6px #ffd70088)',
+   badge:'background:linear-gradient(135deg,#fbbf24,#fff,#fbbf24);color:#000;font-weight:900'},
+  {id:'unstoppable',name:'Непобедимый',   emoji:'🏆', price:100000,tier:'legend',
+   style:'background:linear-gradient(90deg,#ef4444,#ffd700,#ef4444,#ffd700,#ef4444);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:900;animation:titleShimmer 1.5s linear infinite',
+   badge:'background:linear-gradient(135deg,#dc2626,#b8860b,#ffd700);color:#fff;font-weight:900'},
+  // Эксклюзив
+  {id:'dev',       name:'Разработчик',    emoji:'🔱', price:-1,    tier:'exclusive',
+   style:'background:linear-gradient(90deg,#a855f7,#06b6d4,#fbbf24,#f43f5e,#a855f7);background-size:300% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:900;animation:titleShimmer 1.2s linear infinite',
+   badge:'background:linear-gradient(135deg,#7c3aed,#0891b2,#d97706);color:#fff;font-weight:900'},
+];
+
+const TITLE_TIER_LABEL = {rare:'Редкий',epic:'Эпический',legend:'Легендарный',exclusive:'Эксклюзив'};
+const TITLE_TIER_COLOR = {rare:'#38bdf8',epic:'#a855f7',legend:'#fbbf24',exclusive:'#f43f5e'};
+
+function getTitleById(id){return TITLES.find(t=>t.id===id);}
+
+function renderTitleBadge(titleId, small=false){
+  if(!titleId)return '';
+  const t=getTitleById(titleId);
+  if(!t)return '';
+  const sz=small?'font-size:10px;padding:1px 6px':'font-size:11px;padding:2px 8px';
+  return '<span style="display:inline-flex;align-items:center;gap:3px;border-radius:20px;'+sz+';'+t.badge+';white-space:nowrap">'+t.emoji+' '+t.name+'</span>';
+}
+
+window.openTitleShop=function(){
+  loadCoins();
+  const myTitleId=ALL_USERS[ME]?.titleId||null;
+  const owned=(ALL_USERS[ME]?.ownedTitles||'').split(',').filter(Boolean);
+  showScreen('s-titleshop');
+  const body=document.getElementById('titleshop-body');
+  if(!body)return;
+  body.innerHTML='';
+
+  // Balance bar
+  const balEl=document.createElement('div');
+  balEl.style.cssText='padding:14px 16px 0;display:flex;align-items:center;gap:8px';
+  balEl.innerHTML='<div style="flex:1;background:var(--bg3);border-radius:14px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between">'
+    +'<span style="font-size:13px;color:var(--t2)">Твой баланс</span>'
+    +'<span style="font-size:18px;font-weight:900;color:var(--accent)" id="ts-coins">'+MY_COINS+' 🪙</span>'
+    +'</div>';
+  body.appendChild(balEl);
+
+  // Active title display
+  if(myTitleId){
+    const t=getTitleById(myTitleId);
+    const activeEl=document.createElement('div');
+    activeEl.style.cssText='margin:12px 16px 0;background:var(--bg3);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:10px';
+    activeEl.innerHTML='<div style="font-size:12px;color:var(--t3);margin-bottom:2px">Активный титул</div>'
+      +'<div style="margin-top:2px">'+renderTitleBadge(myTitleId)+'</div>';
+    const infoDiv=document.createElement('div');
+    infoDiv.innerHTML='<div style="font-size:12px;color:var(--t3)">Активный титул</div>'
+      +'<div style="margin-top:4px">'+renderTitleBadge(myTitleId)+'</div>';
+    activeEl.innerHTML='';
+    activeEl.appendChild(infoDiv);
+    body.appendChild(activeEl);
+  }
+
+  // Tiers
+  const tiers=['rare','epic','legend','exclusive'];
+  tiers.forEach(tier=>{
+    const tierTitles=TITLES.filter(t=>t.tier===tier);
+    if(!tierTitles.length)return;
+
+    const sec=document.createElement('div');
+    sec.style.cssText='padding:16px 16px 0';
+    sec.innerHTML='<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:'+TITLE_TIER_COLOR[tier]+';margin-bottom:10px">'+TITLE_TIER_LABEL[tier]+'</div>';
+    body.appendChild(sec);
+
+    tierTitles.forEach(t=>{
+      const isOwned=owned.includes(t.id)||t.id==='dev';
+      const isActive=myTitleId===t.id;
+      const isExclusive=t.tier==='exclusive';
+      const canAfford=MY_COINS>=t.price;
+      const isDevOnly=t.id==='dev';
+
+      const card=document.createElement('div');
+      card.style.cssText='margin:0 16px 10px;background:var(--bg2);border-radius:16px;overflow:hidden;border:1.5px solid '+(isActive?'var(--accent)':'var(--border)');
+
+      // Preview area
+      const preview=document.createElement('div');
+      preview.style.cssText='padding:16px;display:flex;align-items:center;gap:12px';
+
+      // Big emoji
+      const emojiEl=document.createElement('div');
+      emojiEl.style.cssText='width:52px;height:52px;border-radius:14px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0';
+      emojiEl.textContent=t.emoji;
+      preview.appendChild(emojiEl);
+
+      // Name + badge preview
+      const info=document.createElement('div');
+      info.style.cssText='flex:1;min-width:0';
+      // Title name with its real style
+      const nameDiv=document.createElement('div');
+      nameDiv.style.cssText='font-size:18px;margin-bottom:5px;'+t.style;
+      nameDiv.textContent=t.emoji+' '+t.name;
+      info.appendChild(nameDiv);
+      // Badge preview
+      const badgeDiv=document.createElement('div');
+      badgeDiv.innerHTML=renderTitleBadge(t.id);
+      info.appendChild(badgeDiv);
+      preview.appendChild(info);
+      card.appendChild(preview);
+
+      // Bottom bar
+      const bottom=document.createElement('div');
+      bottom.style.cssText='padding:10px 16px 12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px';
+
+      // Price
+      const priceEl=document.createElement('div');
+      if(isDevOnly){
+        priceEl.innerHTML='<span style="font-size:12px;color:var(--t3)">🔒 Недоступно для покупки</span>';
+      } else if(isOwned){
+        priceEl.innerHTML='<span style="font-size:12px;color:var(--t3)">✓ В коллекции</span>';
+      } else {
+        priceEl.innerHTML='<span style="font-size:16px;font-weight:900;color:'+(canAfford?'#fbbf24':'var(--t3)')+'">'+t.price.toLocaleString()+' 🪙</span>';
+      }
+      bottom.appendChild(priceEl);
+
+      // Action button
+      if(!isDevOnly){
+        const btn=document.createElement('button');
+        if(isActive){
+          btn.textContent='Активен ✓';
+          btn.style.cssText='background:var(--accent);color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:default;opacity:.8';
+        } else if(isOwned){
+          btn.textContent='Надеть';
+          btn.style.cssText='background:var(--accent-grad);color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer';
+          btn.onclick=()=>equipTitle(t.id);
+        } else if(canAfford){
+          btn.textContent='Купить';
+          btn.style.cssText='background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000;border:none;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:800;cursor:pointer';
+          btn.onclick=()=>buyTitle(t.id);
+        } else {
+          btn.textContent='Мало монет';
+          btn.style.cssText='background:var(--bg3);color:var(--t3);border:none;border-radius:10px;padding:8px 16px;font-size:13px;cursor:default';
+        }
+        bottom.appendChild(btn);
+      }
+
+      card.appendChild(bottom);
+      body.appendChild(card);
+    });
+  });
+
+  // Bottom padding
+  const pad=document.createElement('div');
+  pad.style.height='32px';
+  body.appendChild(pad);
+};
+
+window.buyTitle=async function(titleId){
+  const t=getTitleById(titleId);if(!t||t.price<0)return;
+  if(MY_COINS<t.price){showToast('Недостаточно монет 🪙');return;}
+  MY_COINS-=t.price;
+  const owned=(ALL_USERS[ME]?.ownedTitles||'').split(',').filter(Boolean);
+  owned.push(titleId);
+  await update(ref(db,'users/'+ME),{mycoins:MY_COINS,ownedTitles:owned.join(','),titleId});
+  if(ALL_USERS[ME])ALL_USERS[ME].ownedTitles=owned.join(',');
+  if(ALL_USERS[ME])ALL_USERS[ME].titleId=titleId;
+  updateCoinsDisplay&&updateCoinsDisplay();
+  showToast('🎉 Титул «'+t.name+'» получен!');
+  openTitleShop();
+};
+
+window.equipTitle=async function(titleId){
+  await update(ref(db,'users/'+ME),{titleId});
+  if(ALL_USERS[ME])ALL_USERS[ME].titleId=titleId;
+  showToast('✓ Титул активирован');
+  openTitleShop();
+};
 
 window.openTasks=function(){
   loadCoins();renderTasks();updateCoinsDisplay();
@@ -3602,6 +3940,13 @@ boot();
     </div>
     <div id="my-gifts-body" style="flex:1;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,0px)"></div>
   </div>
+</div>
+<div id="s-titleshop" class="screen hidden">
+  <div class="hdr" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">
+    <button class="hbtn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div class="htitle">🏅 Магазин титулов</div>
+  </div>
+  <div class="body" id="titleshop-body" style="overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,0px)"></div>
 </div>
 </body>
 </html>
