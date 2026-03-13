@@ -1649,12 +1649,12 @@ function subscribeGlobal(){
     const notifs=Object.entries(snap.val()||{});
     notifs.forEach(([nid,n])=>{
       if(!n.read&&n.type==='gift'){
-        // Mark as read
         update(ref(db,'notifications/'+ME+'/'+nid),{read:true}).catch(()=>{});
-        // Find gift catalog entry for SVG
         const cat=GIFT_CATALOG.find(x=>x.id===n.giftId)||GIFT_CATALOG[0];
-        // Show gold notification banner
         showGiftNotification(n,cat);
+      }else if(!n.read&&n.type==='coins_transfer'){
+        update(ref(db,'notifications/'+ME+'/'+nid),{read:true}).catch(()=>{});
+        showCoinsNotification(n);
       }
     });
   });}
@@ -2647,6 +2647,11 @@ window.toggleEmoji=function(){
   const p=document.getElementById('emoji-panel');
   const shown=p.style.display==='block';
   p.style.display=shown?'none':'block';
+  // Prevent page jump - keep scroll position
+  if(!shown){
+    const body=document.getElementById('msgs-body');
+    if(body){const st=body.scrollTop;requestAnimationFrame(()=>{body.scrollTop=st;});}
+  }
 };
 window.insertEmoji=function(em){const inp=document.getElementById('msg-inp');const pos=inp.selectionStart||inp.value.length;inp.value=inp.value.slice(0,pos)+em+inp.value.slice(pos);inp.focus();autoResize(inp);};
 
@@ -3206,7 +3211,7 @@ window.openTitleShop=function(){
   balEl.style.cssText='padding:14px 16px 0;display:flex;align-items:center;gap:8px';
   balEl.innerHTML='<div style="flex:1;background:var(--bg3);border-radius:14px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between">'
     +'<span style="font-size:13px;color:var(--t2)">Твой баланс</span>'
-    +'<span style="font-size:18px;font-weight:900;color:var(--accent)" id="ts-coins">'+MY_COINS+' 🪙</span>'
+    +'<span style="font-size:18px;font-weight:900;color:var(--accent);display:inline-flex;align-items:center;gap:5px" id="ts-coins">'+MY_COINS+' <svg viewBox="0 0 24 24" width="22" height="22" fill="#fbbf24" stroke="none"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" font-size="11" font-weight="900" fill="#1a0a00">M</text></svg></span>'
     +'</div>';
   body.appendChild(balEl);
 
@@ -3460,6 +3465,20 @@ window.sendGift=async function(){
 };
 
 // ── GIFT NOTIFICATION ─────────────────────────────────────────────
+function showCoinsNotification(n){
+  const fromName=n.fromName||n.from;
+  // Update local balance display
+  loadCoins&&loadCoins();
+  // Banner
+  const ban=document.createElement('div');
+  ban.style.cssText='position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9000;background:linear-gradient(135deg,#b8860b,#ffd700);color:#000;border-radius:16px;padding:12px 18px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 24px rgba(255,215,0,.4);max-width:320px;width:90%;animation:slideDown .35s ease';
+  ban.innerHTML='<svg viewBox="0 0 24 24" width="32" height="32" fill="#1a0a00" stroke="none"><circle cx="12" cy="12" r="10" fill="#ffd700"/><text x="12" y="16" text-anchor="middle" font-size="11" font-weight="900" fill="#1a0a00">M</text></svg>'
+    +'<div><div style="font-size:13px;font-weight:900">+'+n.amount+' Mycoins!</div>'
+    +'<div style="font-size:11px;opacity:.8">От '+esc(fromName)+'</div></div>';
+  document.body.appendChild(ban);
+  setTimeout(()=>{ban.style.animation='fadeOut .4s ease forwards';setTimeout(()=>ban.remove(),400);},3500);
+}
+
 function showGiftNotification(n, cat){
   // Remove existing gift notif
   const existing=document.getElementById('gift-notif-banner');
