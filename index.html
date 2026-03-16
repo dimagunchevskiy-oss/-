@@ -134,18 +134,18 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
 .screen.behind{transform:translateX(-28%);pointer-events:none;opacity:.5}
 
 /* ═══ AUTH ══════════════════════════════════════ */
-#s-auth{background:linear-gradient(160deg,#060c1c 0%,#0a1628 50%,#0d1f3a 100%);justify-content:flex-end;align-items:center}
+#s-auth{background:linear-gradient(160deg,#060c1c 0%,#0a1628 50%,#0d1f3a 100%);justify-content:flex-end;align-items:center;overflow:hidden}
 
-/* Animated background blobs */
+/* Animated background blobs — pointer-events:none so they never block taps */
 #s-auth::before{content:'';position:absolute;top:-80px;left:-60px;width:280px;height:280px;
-  border-radius:50%;background:radial-gradient(circle,rgba(42,171,238,.18) 0%,transparent 70%);
-  animation:blobFloat 8s ease-in-out infinite;pointer-events:none}
+  border-radius:50%;background:radial-gradient(circle,rgba(42,171,238,.15) 0%,transparent 70%);
+  animation:blobFloat 8s ease-in-out infinite;pointer-events:none;z-index:0}
 #s-auth::after{content:'';position:absolute;bottom:30%;right:-80px;width:240px;height:240px;
-  border-radius:50%;background:radial-gradient(circle,rgba(167,139,250,.14) 0%,transparent 70%);
-  animation:blobFloat 10s ease-in-out infinite reverse;pointer-events:none}
-@keyframes blobFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-24px) scale(1.05)}}
+  border-radius:50%;background:radial-gradient(circle,rgba(167,139,250,.12) 0%,transparent 70%);
+  animation:blobFloat 10s ease-in-out infinite reverse;pointer-events:none;z-index:0}
+@keyframes blobFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-22px) scale(1.04)}}
 
-.auth-hero{position:absolute;top:0;left:0;right:0;display:flex;flex-direction:column;
+.auth-hero{position:absolute;top:0;left:0;right:0;z-index:1;display:flex;flex-direction:column;
   align-items:center;padding-top:max(48px,8dvh);animation:fadeDown .6s ease both}
 .auth-icon{width:88px;height:88px;border-radius:24px;
   background:linear-gradient(145deg,rgba(255,255,255,.1),rgba(255,255,255,.05));
@@ -159,7 +159,7 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .auth-hero p{color:rgba(255,255,255,.45);font-size:12px;margin-top:6px;letter-spacing:2px;text-transform:uppercase}
 
-.auth-card{background:var(--bg);border-radius:28px 28px 0 0;padding:24px 20px;
+.auth-card{position:relative;z-index:1;background:var(--bg);border-radius:28px 28px 0 0;padding:24px 20px;
   width:100%;max-width:520px;animation:slideUp .4s ease both .1s;
   box-shadow:0 -12px 60px rgba(0,0,0,.5);overflow-y:auto;
   max-height:80dvh;padding-bottom:max(32px,env(safe-area-inset-bottom,16px))}
