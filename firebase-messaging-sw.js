@@ -1,11 +1,10 @@
-// firebase-messaging-sw.js
-// MyMessend — Push Notifications Service Worker
-// Загрузи этот файл рядом с index.html на GitHub
+// firebase-messaging-sw.js — MyMessend Service Worker
+// Размести рядом с index.html на GitHub Pages
 
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
-firebase.initializeApp({
+const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAWZh1laRi7xRK3-LXHpAChEsBpyOdUCbg",
   authDomain: "volleyball-a309b.firebaseapp.com",
   databaseURL: "https://volleyball-a309b-default-rtdb.firebaseio.com",
@@ -13,58 +12,87 @@ firebase.initializeApp({
   storageBucket: "volleyball-a309b.firebasestorage.app",
   messagingSenderId: "869639306669",
   appId: "1:869639306669:web:020f71d494f268baad3524"
-});
+};
 
+firebase.initializeApp(FIREBASE_CONFIG);
 const messaging = firebase.messaging();
 
-// ── Фоновые уведомления (когда приложение закрыто) ─────────────────
+// ── Фоновые FCM уведомления (приложение закрыто/свёрнуто) ──────────
 messaging.onBackgroundMessage(payload => {
-  const n = payload.notification || {};
+  const n   = payload.notification || {};
   const data = payload.data || {};
+  const chatId = data.chatId || '';
+  const tag    = 'chat_' + chatId;
 
-  const title = n.title || 'MyMessend';
-  const body  = n.body  || 'Новое сообщение';
-
-  self.registration.showNotification(title, {
-    body,
-    icon:  '/icon-192.png',   // можно заменить на свою иконку
-    badge: '/icon-72.png',
-    tag:   data.chatId || 'mymessend',  // группирует уведомления одного чата
+  self.registration.showNotification(n.title || 'MyMessend', {
+    body:     n.body  || 'Новое сообщение',
+    icon:     '/icon-192.png',
+    badge:    '/icon-72.png',
+    tag,
     renotify: true,
-    vibrate: [200, 100, 200],
-    data: { url: self.location.origin + '/?chat=' + (data.chatId || '') }
+    vibrate:  [100, 50, 100],
+    data:     { chatId, url: self.location.origin + '/-/' }
   });
 });
 
-// ── Клик по уведомлению — открыть приложение ────────────────────────
+// ── Клик по уведомлению ──────────────────────────────────────────────
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const url = event.notification.data?.url || self.location.origin;
+  const chatId = event.notification.data?.chatId || '';
+  const url    = event.notification.data?.url || self.location.origin;
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      // Если вкладка уже открыта — фокус на неё
       for (const client of list) {
-        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+        if (client.url.includes(self.location.hostname)) {
           client.focus();
-          client.postMessage({ type: 'OPEN_CHAT', chatId: event.notification.data?.chatId });
+          if (chatId) client.postMessage({ type: 'OPEN_CHAT', chatId });
           return;
         }
       }
-      // Иначе открыть новую вкладку
-      if (clients.openWindow) return clients.openWindow(url);
+      return clients.openWindow(url + (chatId ? '?chat=' + chatId : ''));
     })
   );
 });
 
-// ── Push queue polling (запасной механизм через Firebase) ───────────
-// Проверяем очередь каждые 30 сек в фоне
-self.addEventListener('periodicsync', event => {
-  if (event.tag === 'push-check') {
-    event.waitUntil(checkPushQueue());
+// ── RTDB polling — запасной механизм когда FCM не доставил ──────────
+// Проверяем notifications/{user} каждые 25 сек через fetch
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SET_USER') {
+    self._username = event.data.username;
   }
 });
 
-async function checkPushQueue() {
-  // Этот метод используется если FCM не доставил напрямую
-  console.log('[SW] Push queue check');
+async function pollNotifications() {
+  if (!self._username) return;
+  const url = `${FIREBASE_CONFIG.databaseURL}/notifications/${self._username}.json?orderBy="read"&equalTo=false&limitToLast=5`;
+  try {
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (!data) return;
+
+    // Group by sender
+    const bySender = {};
+    Object.entries(data).forEach(([id, n]) => {
+      if (n.type === 'message' || n.type === 'coins_transfer' || n.type === 'gift') {
+        const key = n.from || 'unknown';
+        if (!bySender[key]) bySender[key] = { count: 0, name: n.fromName || key, last: n };
+        bySender[key].count++;
+      }
+    });
+
+    for (const [sender, info] of Object.entries(bySender)) {
+      const tag   = 'rtdb_' + sender;
+      const title = info.count > 1 ? `${info.name} (${info.count} сообщений)` : info.name;
+      const body  = info.last.text || info.last.amount ? `+${info.last.amount} Mycoins` : 'Новое сообщение';
+      await self.registration.showNotification(title, {
+        body, icon: '/icon-192.png', badge: '/icon-72.png',
+        tag, renotify: true, data: { chatId: info.last.chatId || '' }
+      });
+    }
+  } catch(e) {}
 }
+
+self.addEventListener('periodicsync', event => {
+  if (event.tag === 'push-check') event.waitUntil(pollNotifications());
+});
