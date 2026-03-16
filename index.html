@@ -819,6 +819,7 @@ body{font-family:'Inter',sans-serif;color:var(--text);position:fixed;inset:0}
   75% {transform:scale(1.2)  rotate(-15deg); filter:drop-shadow(0 0 18px #ff00cc)}
   100%{transform:scale(1)    rotate(0deg);   filter:drop-shadow(0 0 6px #00E5FF)}
 }
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
 @keyframes titleShimmer{to{background-position:200% center}}
 @keyframes giftLegend{
   0%  {transform:scale(1)    rotate(0deg);   filter:drop-shadow(0 0 10px #FFD700) brightness(1)}
@@ -1530,6 +1531,16 @@ window.doLogin=async function(){
     await update(ref(db,'users/'+un),{online:true,lastSeen:Date.now()});enterApp();
   }catch(e){err.textContent='Ошибка: '+e.message;}
 };
+// Handle SW notification click → open chat
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('message', event=>{
+    if(event.data?.type==='OPEN_CHAT'&&event.data.chatId){
+      window.focus();
+      if(typeof openChat==='function') openChat(event.data.chatId);
+    }
+  });
+}
+
 window.doRegister=async function(){
   const name=document.getElementById('ru-name').value.trim();
   const un=document.getElementById('ru-un').value.trim().replace('@','').toLowerCase();
@@ -1672,8 +1683,56 @@ function enterApp(){
 // PUSH NOTIFICATIONS (FCM Web Push)
 // ══════════════════════════════════════════════
 async function initPush(){
-  if(!('Notification' in window)){return;}
-  Notification.requestPermission();
+  if(!('Notification' in window))return;
+  // Register Service Worker for background push
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./firebase-messaging-sw.js')
+      .then(reg=>{
+        console.log('[Push] SW registered');
+        // If permission already granted — just get token
+        if(Notification.permission==='granted'){
+          _saveFCMToken(reg);
+          return;
+        }
+        if(Notification.permission==='denied') return;
+        _showPushBanner(reg);
+      }).catch(e=>console.log('[Push] SW error',e));
+  } else {
+    if(Notification.permission==='default') _showPushBanner(null);
+  }
+}
+
+async function _saveFCMToken(reg){
+  try{
+    const {getToken}=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js');
+    const token=await getToken(messaging,{vapidKey:VAPID_KEY,serviceWorkerRegistration:reg||undefined});
+    if(token&&ME) await update(ref(db,'users/'+ME),{fcmToken:token,fcmUpdated:Date.now()});
+    console.log('[Push] FCM token saved');
+  }catch(e){console.log('[Push] FCM token error',e);}
+}
+
+function _showPushBanner(reg){
+  if(!('Notification' in window))return;
+  const banner=document.createElement('div');
+  banner.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9000;background:var(--bg2);border:1.5px solid var(--border);border-radius:16px;padding:14px 16px;max-width:320px;width:90%;box-shadow:0 4px 24px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:10px;animation:slideUp .3s ease';
+  banner.innerHTML='<div style="font-size:14px;font-weight:700;color:var(--text)">🔔 Включить уведомления?</div>'
+    +'<div style="font-size:12px;color:var(--t2)">Получай уведомления о новых сообщениях даже когда приложение закрыто</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button id="push-yes" style="flex:1;padding:9px;background:var(--accent-grad);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Включить</button>'
+    +'<button id="push-no" style="flex:1;padding:9px;background:var(--bg3);color:var(--t2);border:none;border-radius:10px;font-size:13px;cursor:pointer">Не сейчас</button>'
+    +'</div>';
+  document.body.appendChild(banner);
+  document.getElementById('push-yes').onclick=function(){
+    banner.remove();
+    Notification.requestPermission().then(p=>{
+      if(p==='granted'){
+        showToast('🔔 Уведомления включены!');
+        _saveFCMToken(reg);
+      }
+    });
+  };
+  document.getElementById('push-no').onclick=function(){banner.remove();};
+  setTimeout(()=>{if(banner.parentNode)banner.remove();},10000);
 }
 
 // Push notifications via direct Notification API + Firebase listener
@@ -1697,18 +1756,26 @@ function showPushNotif(chatId, fromName, text){
 
   _pendingNotifs[key].timer=setTimeout(()=>{
     if(Notification.permission!=='granted') return;
-    const n=new Notification(title,{
-      body,
-      icon:'https://dimagunchevskiy-oss.github.io/-/icon-192.png',
-      tag:key,
-      renotify:true,
-      silent:false
-    });
-    n.onclick=function(){
-      window.focus();
-      _pendingNotifs[key]={count:0,chatId,fromName};
+    // Use SW registration for better notification support
+    const showIt=(reg)=>{
+      if(reg){
+        reg.showNotification(title,{
+          body,
+          icon:'https://'+location.hostname+'/icon-192.png',
+          badge:'https://'+location.hostname+'/icon-72.png',
+          tag:key,
+          renotify:true,
+          data:{chatId},
+          vibrate:[100,50,100]
+        });
+      } else {
+        const n=new Notification(title,{body,icon:'https://'+location.hostname+'/icon-192.png',tag:key,renotify:true});
+        n.onclick=()=>{window.focus();};
+      }
     };
-    // Reset counter after shown
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.ready.then(showIt).catch(()=>showIt(null));
+    } else showIt(null);
     setTimeout(()=>{ if(_pendingNotifs[key]) _pendingNotifs[key].count=0; },4000);
   },300);
 }
